@@ -46,7 +46,7 @@ export function usePointerEvents({
     if (tool === 'text') {
       setShapes((prev) => [
         ...prev,
-        { id, type: 'text', x: pos.x, y: pos.y, text: 'Text', fontSize: 32, color, layer: activeLayer },
+        { id, type: 'text', x: pos.x, y: pos.y, text: '', fontSize: 32, color, layer: activeLayer },
       ]);
       setSelectedId(id);
       setTool('select');

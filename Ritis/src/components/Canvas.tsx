@@ -262,6 +262,29 @@ export function Canvas({
   onPointerUp,
 }: CanvasProps) {
   const [editingTextId, setEditingTextId] = React.useState<string | null>(null);
+  const shapesRef = React.useRef(shapes);
+  shapesRef.current = shapes;
+
+  React.useEffect(() => {
+    if (tool !== 'select') {
+      setEditingTextId(null);
+      return;
+    }
+
+    if (!selectedId) {
+      setEditingTextId(null);
+      return;
+    }
+
+    const selectedShape = shapesRef.current.find((shape) => shape.id === selectedId);
+    if (selectedShape?.type === 'text') {
+      if (selectedShape.text.length === 0) {
+        setEditingTextId(selectedShape.id);
+      }
+    } else {
+      setEditingTextId(null);
+    }
+  }, [selectedId, tool]);
 
   return (
     <svg
@@ -311,7 +334,8 @@ export function Canvas({
         if (shape.type === 'text') {
           const textWidth = Math.max(shape.fontSize, shape.text.length * shape.fontSize * 0.65);
           const textHeight = shape.fontSize * 1.3;
-          const isEditing = isSelected && editingTextId === shape.id;
+          const isEditing = isSelected && tool === 'select' && editingTextId === shape.id;
+          const showTextSelection = isSelected && tool === 'select';
           return (
             <g key={shape.id} style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
               <rect
@@ -320,9 +344,9 @@ export function Canvas({
                 width={textWidth}
                 height={textHeight}
                 fill="transparent"
-                stroke={isSelected ? '#111827' : 'none'}
-                strokeWidth={isSelected ? 1 : 0}
-                strokeDasharray={isSelected ? '5,5' : undefined}
+                stroke={showTextSelection ? '#111827' : 'none'}
+                strokeWidth={showTextSelection ? 1 : 0}
+                strokeDasharray={showTextSelection ? '5,5' : undefined}
                 aria-label="Dubbelklicka för att redigera texten"
                 onPointerDown={(e) => onShapePointerDown(e, shape.id)}
                 onDoubleClick={(e) => {
@@ -331,7 +355,7 @@ export function Canvas({
                   setEditingTextId(shape.id);
                 }}
               />
-              {isEditing ? (
+              {isEditing && (
                 <foreignObject x={shape.x} y={shape.y} width={textWidth} height={textHeight}>
                   <input
                     type="text"
@@ -350,16 +374,20 @@ export function Canvas({
                       width: '100%',
                       height: '100%',
                       boxSizing: 'border-box',
-                      padding: '2px 4px',
-                      border: '2px solid #3b82f6',
+                      padding: '0 2px',
+                      border: 'none',
+                      outline: 'none',
                       background: 'white',
                       color: shape.color,
+                      caretColor: shape.color,
                       fontSize: `${shape.fontSize}px`,
                       fontFamily: 'sans-serif',
+                      lineHeight: `${shape.fontSize}px`,
                     }}
                   />
                 </foreignObject>
-              ) : (
+              )}
+              {!isEditing && (
                 <text
                   x={shape.x}
                   y={shape.y + shape.fontSize}

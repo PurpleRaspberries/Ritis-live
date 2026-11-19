@@ -17,6 +17,13 @@ export default function App() {
   const [activeLayer, setActiveLayer] = useState<Layer>(1);
   const canvasRef = useRef<SVGSVGElement>(null);
 
+  const handleToolChange = (newTool: Tool) => {
+    setTool(newTool);
+    if (newTool !== 'select') {
+      setSelectedId(null);
+    }
+  };
+
   const {
     draftShape,
     handleCanvasPointerDown,
@@ -151,7 +158,7 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', margin: 0 }}>
       <Toolbar
         tool={tool}
-        setTool={setTool}
+        setTool={handleToolChange}
         color={color}
         onColorChange={handleColorChange}
         hasSelection={Boolean(selectedId)}
