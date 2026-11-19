@@ -1,0 +1,42 @@
+# --- DITT RITPROGRAM (Testbilder & Exporter) ---
+# Ignorera mappar där du sparar testritningar eller exporterade bilder
+test_drawings/
+tests/output/
+exports/
+*.autosave
+
+# --- WINDOWS & VS CODE ---
+# Systemfiler som Windows och VS Code skapar automatiskt
+Thumbs.db
+desktop.ini
+*.lnk
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# --- TILLFÄLLIGA FILER & LOGGAR ---
+*.tmp
+*.temp
+*.log
+*.bak
+
+# --- VANLIGA SPRÅK & RAMVERK ---
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# JavaScript / TypeScript / Web / Electron
+node_modules/
+dist/
+build/
+.env
+
+# C++ / C# / Kompilerade program
+*.exe
+*.obj
+*.o
+*.pdb
+bin/
+obj/
