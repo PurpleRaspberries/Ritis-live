@@ -1,0 +1,9 @@
+// Samordnar TypeScript-projektets delkonfigurationer.
+// Refererar till separata inställningar för appkoden och Vite-konfigurationen.
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
