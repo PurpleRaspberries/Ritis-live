@@ -4,6 +4,6 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/Ritis/',
+  base: '/Ritis-live/',
   plugins: [react()],
 })
