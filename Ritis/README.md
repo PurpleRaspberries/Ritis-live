@@ -10,7 +10,8 @@ Ritis är en enkel, barnvänlig ritapp byggd med React, TypeScript och Vite.
 - Det valda typsnittet sparas i JSON-ritningar, anges i SVG-filer och ritas in i PNG- och JPEG-bilder.
 - Webbläsarfliken visar **Ritis - Ny** för en osparad ritning. När en ritning öppnas eller sparas visas **Ritis - filnamn**, utan filändelse.
 - Öppna **Figurer** för att rita hjärta, kanin, regnbåge, moln, enhörning, sol, stjärna, pepparkaka, blomma eller blad.
-- Välj **Flytta/markera** för att markera och flytta objekt. Dra i en linjes ändpunkter för att ändra linjen. **Ta bort vald sak** tar bort det markerade objektet.
+- Välj **Flytta/markera** för att markera och flytta objekt. Dra i en linjes ändpunkter för att ändra linjen. **Kopiera vald** skapar en förskjuten kopia av det markerade objektet (**Ctrl/Cmd+D**). **Ta bort vald sak** tar bort objektet.
+- **Ångra** och **Gör om** återställer eller upprepar ändringar. Använd **Ctrl/Cmd+Z** för att ångra och **Ctrl/Cmd+Y** eller **Ctrl/Cmd+Shift+Z** för att göra om.
 - **Börja om** frågar först om du vill rensa hela ritningen.
 - Under **Fler val** kan du byta språk, välja lager och bakgrundsfärg eller göra bakgrunden genomskinlig. Använd **Spara / exportera** för att välja JSON, PNG, JPEG eller SVG i samma filruta. Du kan även öppna en tidigare sparad ritning och läsa mer om Ritis under **Om Ritis**.
 - En genomskinlig bakgrund sparas i ritningsfilen. PNG och SVG kan behålla transparensen; JPEG får vit bakgrund.

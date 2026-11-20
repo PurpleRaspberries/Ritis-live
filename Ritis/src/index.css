@@ -145,6 +145,16 @@ body {
   box-shadow: 0 4px 8px rgb(15 23 42 / 14%);
 }
 
+.toolbar-tool:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-tool:disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 3px rgb(15 23 42 / 8%);
+}
+
 .toolbar-tool.is-active {
   border-color: #7c3aed;
   background: #ede9fe;

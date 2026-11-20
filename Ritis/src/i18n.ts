@@ -18,7 +18,10 @@ export interface AppStrings {
   figures: string;
   additionalFigures: string;
   moreOptions: string;
+  copySelected: string;
   deleteSelected: string;
+  undo: string;
+  redo: string;
   restart: string;
   restartAriaLabel: string;
   restartDialogTitle: string;
@@ -134,7 +137,10 @@ export const translations: Record<Language, AppStrings> = {
     figures: 'Figurer',
     additionalFigures: 'Fler ritfigurer',
     moreOptions: 'Fler val',
+    copySelected: 'Kopiera vald',
     deleteSelected: 'Ta bort vald sak',
+    undo: 'Ångra',
+    redo: 'Gör om',
     restart: 'Börja om',
     restartAriaLabel: 'Börja om och rensa hela bilden',
     restartDialogTitle: 'Vill du börja om?',
@@ -257,7 +263,10 @@ export const translations: Record<Language, AppStrings> = {
     figures: 'Figures',
     additionalFigures: 'More figures',
     moreOptions: 'More options',
+    copySelected: 'Copy selected',
     deleteSelected: 'Delete selected',
+    undo: 'Undo',
+    redo: 'Redo',
     restart: 'Start over',
     restartAriaLabel: 'Start over and clear the whole picture',
     restartDialogTitle: 'Do you want to start over?',
@@ -380,7 +389,10 @@ export const translations: Record<Language, AppStrings> = {
     figures: 'Figuren',
     additionalFigures: 'Weitere Figuren',
     moreOptions: 'Mehr Optionen',
+    copySelected: 'Auswahl kopieren',
     deleteSelected: 'Ausgewähltes löschen',
+    undo: 'Rückgängig',
+    redo: 'Wiederholen',
     restart: 'Neu anfangen',
     restartAriaLabel: 'Neu anfangen und das ganze Bild löschen',
     restartDialogTitle: 'Möchtest du neu anfangen?',

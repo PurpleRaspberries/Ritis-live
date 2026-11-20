@@ -10,7 +10,12 @@ interface ToolbarProps {
   tool: Tool;
   setTool: (tool: Tool) => void;
   hasSelection: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
+  onDuplicateSelected: () => void;
   onDeleteSelected: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
   onRestartRequest: () => void;
   onSaveExport: () => void;
   onOpenFile: (file: File) => void;
@@ -56,7 +61,12 @@ export function Toolbar({
   tool,
   setTool,
   hasSelection,
+  canUndo,
+  canRedo,
+  onDuplicateSelected,
   onDeleteSelected,
+  onUndo,
+  onRedo,
   onRestartRequest,
   onSaveExport,
   onOpenFile,
@@ -133,6 +143,26 @@ export function Toolbar({
               <span>{t.toolLabels[toolName]}</span>
             </button>
           ))}
+          <button
+            type="button"
+            className="toolbar-tool"
+            onClick={onUndo}
+            disabled={!canUndo}
+            aria-keyshortcuts="Control+Z Meta+Z"
+          >
+            <span className="toolbar-tool-icon" aria-hidden="true">↶</span>
+            <span>{t.undo}</span>
+          </button>
+          <button
+            type="button"
+            className="toolbar-tool"
+            onClick={onRedo}
+            disabled={!canRedo}
+            aria-keyshortcuts="Control+Y Control+Shift+Z Meta+Y Meta+Shift+Z"
+          >
+            <span className="toolbar-tool-icon" aria-hidden="true">↷</span>
+            <span>{t.redo}</span>
+          </button>
           <details ref={basicShapeMenuRef} className="toolbar-shapes-menu">
             <summary className={`toolbar-tool toolbar-shapes-trigger${basicShapeTools.some(({ tool: shapeTool }) => shapeTool === tool) ? ' is-active' : ''}`}>
               <span className="toolbar-tool-icon" aria-hidden="true">🔷</span>
@@ -173,6 +203,17 @@ export function Toolbar({
               ))}
             </div>
           </details>
+          {hasSelection && (
+            <button
+              type="button"
+              className="toolbar-tool"
+              onClick={onDuplicateSelected}
+              aria-keyshortcuts="Control+D Meta+D"
+            >
+              <span className="toolbar-tool-icon" aria-hidden="true">📋</span>
+              <span>{t.copySelected}</span>
+            </button>
+          )}
           {hasSelection && (
             <button
               type="button"

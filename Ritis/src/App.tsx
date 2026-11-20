@@ -1,6 +1,6 @@
 // Samlar ritprogrammets tillstånd och kopplar ihop verktygsfält, canvas och egenskapspanel.
 // Hanterar filåtgärder och synkroniserar ritningens namn med webbläsarfliken.
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DrawingFileFormat, Layer, Shape, TextFontFamily, Tool } from './types';
 import { isLanguage, translations, type Language } from './i18n';
 import { Toolbar } from './components/Toolbar';
@@ -15,6 +15,22 @@ import {
   loadDrawingFromFile,
 } from './utils/storage';
 
+function offsetShape(shape: Shape, offset: number): Shape {
+  if (shape.type === 'line') {
+    return {
+      ...shape,
+      x1: shape.x1 + offset,
+      y1: shape.y1 + offset,
+      x2: shape.x2 + offset,
+      y2: shape.y2 + offset,
+    };
+  }
+  if (shape.type === 'circle') {
+    return { ...shape, cx: shape.cx + offset, cy: shape.cy + offset };
+  }
+  return { ...shape, x: shape.x + offset, y: shape.y + offset };
+}
+
 export default function App() {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [tool, setTool] = useState<Tool>('freehand');
@@ -23,6 +39,8 @@ export default function App() {
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
   const [saveFormatDialogOpen, setSaveFormatDialogOpen] = useState(false);
   const [fileName, setFileName] = useState('');
@@ -31,8 +49,56 @@ export default function App() {
     const savedLanguage = window.localStorage.getItem('ritis-language');
     return isLanguage(savedLanguage) ? savedLanguage : 'sv';
   });
+  const historyRef = useRef<{
+    past: Shape[][];
+    future: Shape[][];
+    previous: Shape[];
+    pending: Shape[] | null;
+    timer: number | null;
+    skipNext: boolean;
+  }>({
+    past: [],
+    future: [],
+    previous: shapes,
+    pending: null,
+    timer: null,
+    skipNext: false,
+  });
   const canvasRef = useRef<SVGSVGElement>(null);
   const t = translations[language];
+
+  useEffect(() => {
+    const history = historyRef.current;
+    if (history.skipNext) {
+      history.skipNext = false;
+      history.previous = shapes;
+      return;
+    }
+    if (history.previous === shapes) return;
+
+    if (JSON.stringify(history.previous) === JSON.stringify(shapes)) {
+      history.previous = shapes;
+      return;
+    }
+
+    if (history.pending === null) history.pending = history.previous;
+    history.future = [];
+    setCanUndo(true);
+    setCanRedo(false);
+    history.previous = shapes;
+    if (history.timer !== null) window.clearTimeout(history.timer);
+    history.timer = window.setTimeout(() => {
+      if (history.pending !== null) history.past.push(history.pending);
+      history.pending = null;
+      history.timer = null;
+      setCanUndo(history.past.length > 0);
+    }, 500);
+  }, [shapes]);
+
+  useEffect(() => () => {
+    const history = historyRef.current;
+    if (history.timer !== null) window.clearTimeout(history.timer);
+  }, []);
 
   // Sparar språkvalet och visar alltid appnamnet samt ritningens namn utan filändelse.
   useEffect(() => {
@@ -96,6 +162,79 @@ export default function App() {
     setShapes((prev) => prev.filter((s) => s.id !== selectedId));
     setSelectedId(null);
   };
+
+  const handleDuplicateSelected = useCallback(() => {
+    const selectedShape = shapes.find((shape) => shape.id === selectedId);
+    if (!selectedShape) return;
+    const duplicate = { ...offsetShape(selectedShape, 20), id: crypto.randomUUID() };
+    setShapes((prev) => [...prev, duplicate]);
+    setSelectedId(duplicate.id);
+  }, [selectedId, shapes]);
+
+  const flushPendingHistory = useCallback(() => {
+    const history = historyRef.current;
+    if (history.timer !== null) window.clearTimeout(history.timer);
+    history.timer = null;
+    if (history.pending !== null) {
+      history.past.push(history.pending);
+      history.pending = null;
+      history.future = [];
+      setCanUndo(history.past.length > 0);
+      setCanRedo(false);
+    }
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    flushPendingHistory();
+    const history = historyRef.current;
+    const previous = history.past.pop();
+    if (!previous) return;
+    history.future.push(shapes);
+    setCanUndo(history.past.length > 0);
+    setCanRedo(true);
+    history.skipNext = true;
+    setShapes(previous);
+  }, [flushPendingHistory, shapes]);
+
+  const handleRedo = useCallback(() => {
+    flushPendingHistory();
+    const history = historyRef.current;
+    const next = history.future.pop();
+    if (!next) return;
+    history.past.push(shapes);
+    setCanUndo(true);
+    setCanRedo(history.future.length > 0);
+    history.skipNext = true;
+    setShapes(next);
+  }, [flushPendingHistory, shapes]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement
+        && (target.isContentEditable || target.matches('input, textarea, select'))
+      ) return;
+
+      const modifier = event.ctrlKey || event.metaKey;
+      if (!modifier) return;
+      const key = event.key.toLowerCase();
+      if (key === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) handleRedo();
+        else handleUndo();
+      } else if (key === 'y') {
+        event.preventDefault();
+        handleRedo();
+      } else if (key === 'd' && selectedId) {
+        event.preventDefault();
+        handleDuplicateSelected();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleDuplicateSelected, handleRedo, handleUndo, selectedId]);
 
   const handleConfirmRestart = () => {
     setShapes([]);
@@ -257,7 +396,12 @@ export default function App() {
         tool={tool}
         setTool={handleToolChange}
         hasSelection={Boolean(selectedId)}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onDuplicateSelected={handleDuplicateSelected}
         onDeleteSelected={deleteSelected}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
         onRestartRequest={() => setRestartDialogOpen(true)}
         onSaveExport={handleSaveExport}
         onOpenFile={handleOpenFile}
