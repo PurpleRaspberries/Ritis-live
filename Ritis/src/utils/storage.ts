@@ -1,6 +1,7 @@
 // Hanterar import, export och nedladdning av ritningar.
 // Anropas av App för att spara och läsa JSON samt skapa en JPEG från canvasen.
 import type { Layer, Shape } from '../types';
+import { translations, type Language } from '../i18n';
 
 export function saveDrawingToFile(shapes: Shape[], fileName: string) {
   const json = JSON.stringify(shapes, null, 2);
@@ -16,11 +17,16 @@ export function saveDrawingToFile(shapes: Shape[], fileName: string) {
   URL.revokeObjectURL(url);
 }
 
-export async function exportDrawingToJpeg(svg: SVGSVGElement, fileName: string): Promise<void> {
+export async function exportDrawingToJpeg(
+  svg: SVGSVGElement,
+  fileName: string,
+  language: Language,
+): Promise<void> {
+  const t = translations[language];
   const width = Math.round(svg.clientWidth);
   const height = Math.round(svg.clientHeight);
   if (width <= 0 || height <= 0) {
-    throw new Error('Ritytan saknar en giltig storlek.');
+    throw new Error(t.invalidCanvasSize);
   }
 
   const clone = svg.cloneNode(true) as SVGSVGElement;
@@ -53,7 +59,7 @@ export async function exportDrawingToJpeg(svg: SVGSVGElement, fileName: string):
   try {
     await new Promise<void>((resolve, reject) => {
       image.onload = () => resolve();
-      image.onerror = () => reject(new Error('Kunde inte läsa in ritningen för export.'));
+      image.onerror = () => reject(new Error(t.failedToLoadForExport));
       image.src = svgUrl;
     });
   } finally {
@@ -65,7 +71,7 @@ export async function exportDrawingToJpeg(svg: SVGSVGElement, fileName: string):
   canvas.height = height;
   const context = canvas.getContext('2d');
   if (!context) {
-    throw new Error('Kunde inte skapa en bildyta för JPEG-exporten.');
+    throw new Error(t.failedToCreateImageSurface);
   }
 
   context.fillStyle = '#ffffff';
@@ -74,7 +80,7 @@ export async function exportDrawingToJpeg(svg: SVGSVGElement, fileName: string):
 
   const jpegBlob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
-      (blob) => blob ? resolve(blob) : reject(new Error('Kunde inte skapa JPEG-filen.')),
+      (blob) => blob ? resolve(blob) : reject(new Error(t.failedToCreateJpeg)),
       'image/jpeg',
       0.92,
     );
@@ -90,8 +96,10 @@ export async function exportDrawingToJpeg(svg: SVGSVGElement, fileName: string):
 
 export function loadDrawingFromFile(
   file: File,
-  onLoaded: (shapes: Shape[]) => void
+  onLoaded: (shapes: Shape[]) => void,
+  language: Language,
 ) {
+  const t = translations[language];
   const reader = new FileReader();
   reader.onload = (event) => {
     try {
@@ -108,10 +116,10 @@ export function loadDrawingFromFile(
         });
         onLoaded(normalizedShapes);
       } else {
-        alert('Filen verkar inte vara en giltig ritning.');
+        alert(t.invalidDrawing);
       }
     } catch {
-      alert('Kunde inte läsa filen. Kontrollera att det är en sparad JSON-ritning.');
+      alert(t.failedToReadDrawing);
     }
   };
   reader.readAsText(file);

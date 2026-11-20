@@ -1,4 +1,0 @@
- http://localhost:5173/
-
-cd ritis
-npm run dev

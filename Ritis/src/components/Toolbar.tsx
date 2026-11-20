@@ -1,7 +1,8 @@
-// Ger användaren verktyg för att rita, välja färg och hantera ritningsfiler.
-// Skickar val och åtgärder till App och återanvänder färgväljarkomponenten.
-import { useRef } from 'react';
+// Visar ritverktyg, färgval och figurmeny och skickar användarens val till App.
+// Samlar även omstart, objektborttagning och avancerade ritningsfunktioner.
+import { useEffect, useRef } from 'react';
 import type { Layer, Tool } from '../types';
+import { isLanguage, translations, type Language } from '../i18n';
 import { ColorPicker } from './ColorPicker';
 
 interface ToolbarProps {
@@ -19,7 +20,27 @@ interface ToolbarProps {
   onFileNameChange: (fileName: string) => void;
   activeLayer: Layer;
   onLayerChange: (layer: Layer) => void;
+  language: Language;
+  onLanguageChange: (language: Language) => void;
 }
+
+const tools: Array<{ tool: Tool; icon: string }> = [
+  { tool: 'select', icon: '👆' },
+  { tool: 'rect', icon: '🟦' },
+  { tool: 'circle', icon: '🔵' },
+  { tool: 'line', icon: '〰️' },
+  { tool: 'text', icon: '🔤' },
+];
+
+const shapeTools: Array<{ tool: Tool; icon: string }> = [
+  { tool: 'heart', icon: '❤️' },
+  { tool: 'rabbit', icon: '🐰' },
+  { tool: 'rainbow', icon: '🌈' },
+  { tool: 'cloud', icon: '☁️' },
+  { tool: 'unicorn', icon: '🦄' },
+];
+
+const languages: Language[] = ['sv', 'en', 'de'];
 
 export function Toolbar({
   tool,
@@ -36,8 +57,29 @@ export function Toolbar({
   onFileNameChange,
   activeLayer,
   onLayerChange,
+  language,
+  onLanguageChange,
 }: ToolbarProps) {
+  const t = translations[language];
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const shapeMenuRef = useRef<HTMLDetailsElement>(null);
+  const moreMenuRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    const closeMenusOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      [moreMenuRef.current, shapeMenuRef.current].forEach((menu) => {
+        if (menu?.open && !menu.contains(target)) {
+          menu.open = false;
+        }
+      });
+    };
+
+    document.addEventListener('pointerdown', closeMenusOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeMenusOnOutsideClick);
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,80 +89,139 @@ export function Toolbar({
     }
   };
 
+  const handleShapeToolSelect = (shapeTool: Tool) => {
+    setTool(shapeTool);
+    if (shapeMenuRef.current) shapeMenuRef.current.open = false;
+  };
+
+  const handleMoreMenuAction = (action: () => void) => {
+    if (moreMenuRef.current) moreMenuRef.current.open = false;
+    action();
+  };
+
   return (
-    <div style={{ padding: '10px', background: '#f3f4f6', display: 'flex', gap: '10px', borderBottom: '1px solid #ccc', alignItems: 'center' }}>
-      <button onClick={() => setTool('select')} style={{ fontWeight: tool === 'select' ? 'bold' : 'normal' }}>
-        Markera / Flytta
-      </button>
-      <button onClick={() => setTool('rect')} style={{ fontWeight: tool === 'rect' ? 'bold' : 'normal' }}>
-        Rektangel
-      </button>
-      <button onClick={() => setTool('circle')} style={{ fontWeight: tool === 'circle' ? 'bold' : 'normal' }}>
-        Cirkel
-      </button>
-      <button onClick={() => setTool('line')} style={{ fontWeight: tool === 'line' ? 'bold' : 'normal' }}>
-        Streck
-      </button>
-      <button onClick={() => setTool('text')} style={{ fontWeight: tool === 'text' ? 'bold' : 'normal' }}>
-        Text
-      </button>
-      <button onClick={() => setTool('heart')} style={{ fontWeight: tool === 'heart' ? 'bold' : 'normal' }}>
-        Hjärta
-      </button>
-      <button onClick={() => setTool('rabbit')} style={{ fontWeight: tool === 'rabbit' ? 'bold' : 'normal' }}>
-        Kanin
-      </button>
-      <button onClick={() => setTool('rainbow')} style={{ fontWeight: tool === 'rainbow' ? 'bold' : 'normal' }}>
-        Regnbåge
-      </button>
-      <button onClick={() => setTool('cloud')} style={{ fontWeight: tool === 'cloud' ? 'bold' : 'normal' }}>
-        Moln
-      </button>
-      <button onClick={() => setTool('unicorn')} style={{ fontWeight: tool === 'unicorn' ? 'bold' : 'normal' }}>
-        Enhörning
-      </button>
-      <ColorPicker color={color} onColorChange={onColorChange} popup />
-
-      <label>
-        Lager
-        <select
-          value={activeLayer}
-          onChange={(e) => onLayerChange(Number(e.target.value) as Layer)}
-          style={{ marginLeft: '6px' }}
-        >
-          {[1, 2, 3, 4, 5].map((layer) => (
-            <option key={layer} value={layer}>Lager {layer}</option>
+    <header className="toolbar">
+      <div className="toolbar-main">
+        <div className="toolbar-heading">
+          <h1 className="toolbar-title">{t.appTitle}</h1>
+          <p className="toolbar-instruction" aria-live="polite">{t.toolInstructions[tool]}</p>
+        </div>
+        <div className="toolbar-color">
+          <ColorPicker color={color} onColorChange={onColorChange} popup language={language} />
+        </div>
+        <div className="toolbar-tools" role="group" aria-label={t.toolsAriaLabel}>
+          {tools.map(({ tool: toolName, icon }) => (
+            <button
+              key={toolName}
+              type="button"
+              className={`toolbar-tool${tool === toolName ? ' is-active' : ''}`}
+              onClick={() => setTool(toolName)}
+              aria-pressed={tool === toolName}
+            >
+              <span className="toolbar-tool-icon" aria-hidden="true">{icon}</span>
+              <span>{t.toolLabels[toolName]}</span>
+            </button>
           ))}
-        </select>
-      </label>
-
-      {hasSelection && (
-        <button onClick={onDeleteSelected} style={{ color: 'red' }}>
-          Ta bort markerad
-        </button>
-      )}
-
-      <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-        <input
-          type="text"
-          value={fileName}
-          onChange={(e) => onFileNameChange(e.target.value)}
-          placeholder="Filnamn"
-          aria-label="Filnamn"
-          style={{ width: '140px' }}
-        />
-        <button onClick={onSave}>Spara</button>
-        <button onClick={onExportJpeg}>Exportera JPEG</button>
-        <button onClick={() => fileInputRef.current?.click()}>Öppna</button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json"
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
-        />
-        <button onClick={onClearAll}>Rensa allt</button>
+          <details ref={shapeMenuRef} className="toolbar-shapes-menu">
+            <summary className={`toolbar-tool toolbar-shapes-trigger${shapeTools.some(({ tool: shapeTool }) => shapeTool === tool) ? ' is-active' : ''}`}>
+              <span className="toolbar-tool-icon" aria-hidden="true">✨</span>
+              <span>{t.figures}</span>
+            </summary>
+            <div className="toolbar-shapes-panel" role="group" aria-label={t.additionalFigures}>
+              {shapeTools.map(({ tool: shapeTool, icon }) => (
+                <button
+                  key={shapeTool}
+                  type="button"
+                  className={`toolbar-tool${tool === shapeTool ? ' is-active' : ''}`}
+                  onClick={() => handleShapeToolSelect(shapeTool)}
+                  aria-pressed={tool === shapeTool}
+                >
+                  <span className="toolbar-tool-icon" aria-hidden="true">{icon}</span>
+                  <span>{t.toolLabels[shapeTool]}</span>
+                </button>
+              ))}
+            </div>
+          </details>
+          {hasSelection && (
+            <button
+              type="button"
+              className="toolbar-tool toolbar-delete"
+              onClick={onDeleteSelected}
+            >
+              <span className="toolbar-tool-icon" aria-hidden="true">🗑️</span>
+              <span>{t.deleteSelected}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="toolbar-tool toolbar-reset"
+            onClick={onClearAll}
+            aria-label={t.restartAriaLabel}
+          >
+            <span className="toolbar-tool-icon" aria-hidden="true">🧹</span>
+            <span>{t.restart}</span>
+          </button>
+        </div>
       </div>
-    </div>
+
+      <details ref={moreMenuRef} className="toolbar-more">
+        <summary>⚙️ {t.moreOptions}</summary>
+        <div className="toolbar-more-panel">
+          <label className="toolbar-setting">
+            {t.languageLabel}
+            <select
+              aria-label={t.languageAriaLabel}
+              value={language}
+              onChange={(e) => {
+                const nextLanguage = e.target.value;
+                if (isLanguage(nextLanguage)) {
+                  handleMoreMenuAction(() => onLanguageChange(nextLanguage));
+                }
+              }}
+            >
+              {languages.map((option) => (
+                <option key={option} value={option}>{t.languageNames[option]}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="toolbar-setting">
+            {t.layer}
+            <select
+              value={activeLayer}
+              onChange={(e) => handleMoreMenuAction(() => onLayerChange(Number(e.target.value) as Layer))}
+            >
+              {[1, 2, 3, 4, 5].map((layer) => (
+                <option key={layer} value={layer}>{t.layerOption(layer)}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="toolbar-setting">
+            {t.imageName}
+            <input
+              type="text"
+              value={fileName}
+              onChange={(e) => onFileNameChange(e.target.value)}
+              aria-label={t.imageName}
+            />
+          </label>
+
+          <div className="toolbar-actions">
+            <button type="button" onClick={() => handleMoreMenuAction(onSave)}>💾 {t.save}</button>
+            <button type="button" onClick={() => handleMoreMenuAction(onExportJpeg)}>🖼️ {t.saveAsJpeg}</button>
+            <button type="button" onClick={() => handleMoreMenuAction(() => fileInputRef.current?.click())}>📂 {t.openDrawing}</button>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleFileChange}
+            className="toolbar-file-input"
+          />
+        </div>
+      </details>
+    </header>
   );
 }

@@ -1,25 +1,28 @@
 // Visar färgpaletten och hanterar val av färg eller egen färg.
 // Används både fristående i egenskapspanelen och som popup i verktygsfältet.
 import { useRef } from 'react';
+import { translations, type ColorName, type Language } from '../i18n';
 
 const colors = [
-  { name: 'Röd', value: '#ef4444' },
-  { name: 'Orange', value: '#f97316' },
-  { name: 'Gul', value: '#facc15' },
-  { name: 'Grön', value: '#22c55e' },
-  { name: 'Blå', value: '#3b82f6' },
-  { name: 'Lila', value: '#a855f7' },
-  { name: 'Rosa', value: '#ec4899' },
-  { name: 'Svart', value: '#1f2937' },
-];
+  { name: 'red', value: '#ef4444' },
+  { name: 'orange', value: '#f97316' },
+  { name: 'yellow', value: '#facc15' },
+  { name: 'green', value: '#22c55e' },
+  { name: 'blue', value: '#3b82f6' },
+  { name: 'purple', value: '#a855f7' },
+  { name: 'pink', value: '#ec4899' },
+  { name: 'black', value: '#1f2937' },
+] satisfies Array<{ name: ColorName; value: string }>;
 
 interface ColorPickerProps {
   color: string;
   onColorChange: (color: string) => void;
+  language: Language;
   popup?: boolean;
 }
 
-export function ColorPicker({ color, onColorChange, popup = false }: ColorPickerProps) {
+export function ColorPicker({ color, onColorChange, language, popup = false }: ColorPickerProps) {
+  const t = translations[language];
   const popupRef = useRef<HTMLDetailsElement>(null);
 
   const handleColorSelect = (newColor: string) => {
@@ -40,8 +43,8 @@ export function ColorPicker({ color, onColorChange, popup = false }: ColorPicker
         <button
           key={value}
           type="button"
-          title={name}
-          aria-label={`Välj färgen ${name}`}
+          title={t.colorNames[name]}
+          aria-label={t.chooseColor(t.colorNames[name])}
           aria-pressed={color.toLowerCase() === value}
           onClick={() => handleColorSelect(value)}
           style={{
@@ -67,11 +70,11 @@ export function ColorPicker({ color, onColorChange, popup = false }: ColorPicker
           fontSize: '14px',
         }}
       >
-        Egen färg
+        {t.customColor}
         <input
           type="color"
           value={color}
-          aria-label="Välj en egen färg"
+          aria-label={t.chooseCustomColor}
           onChange={(e) => handleColorSelect(e.target.value)}
           style={{ width: '56px', height: '40px', cursor: 'pointer' }}
         />
@@ -82,7 +85,7 @@ export function ColorPicker({ color, onColorChange, popup = false }: ColorPicker
   if (!popup) {
     return (
       <div>
-        <div style={{ marginBottom: '8px' }}>Färg</div>
+        <div style={{ marginBottom: '8px' }}>{t.colorLabel}</div>
         {renderPalette()}
       </div>
     );
@@ -114,7 +117,7 @@ export function ColorPicker({ color, onColorChange, popup = false }: ColorPicker
             border: '2px solid #374151',
           }}
         />
-        Färg
+        {t.colorLabel}
       </summary>
       <div
         style={{

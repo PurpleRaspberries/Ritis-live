@@ -1,7 +1,8 @@
 // Samlar ritprogrammets tillstånd och kopplar ihop verktygsfält, canvas och egenskapspanel.
 // Hanterar även filåtgärder och skickar händelser vidare till komponenter och hjälpfunktioner.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Layer, Shape, Tool } from './types';
+import { isLanguage, translations, type Language } from './i18n';
 import { Toolbar } from './components/Toolbar';
 import { Canvas } from './components/Canvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
@@ -15,7 +16,18 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fileName, setFileName] = useState('min-ritning');
   const [activeLayer, setActiveLayer] = useState<Layer>(1);
+  const [language, setLanguage] = useState<Language>(() => {
+    const savedLanguage = window.localStorage.getItem('ritis-language');
+    return isLanguage(savedLanguage) ? savedLanguage : 'sv';
+  });
   const canvasRef = useRef<SVGSVGElement>(null);
+  const t = translations[language];
+
+  useEffect(() => {
+    window.localStorage.setItem('ritis-language', language);
+    document.documentElement.lang = language;
+    document.title = t.appTitle;
+  }, [language, t.appTitle]);
 
   const handleToolChange = (newTool: Tool) => {
     setTool(newTool);
@@ -65,7 +77,7 @@ export default function App() {
       setShapes(loadedShapes);
       setSelectedId(null);
       setFileName(file.name.replace(/\.json$/i, '') || 'min-ritning');
-    });
+    }, language);
   };
 
   const handleLayerChange = (layer: Layer) => {
@@ -138,15 +150,15 @@ export default function App() {
 
   const handleExportJpeg = async () => {
     if (!canvasRef.current) {
-      window.alert('Kunde inte hitta ritytan för export.');
+      window.alert(t.missingCanvasForExport);
       return;
     }
 
     try {
-      await exportDrawingToJpeg(canvasRef.current, fileName);
+      await exportDrawingToJpeg(canvasRef.current, fileName, language);
     } catch (error) {
-      console.error('JPEG-exporten misslyckades:', error);
-      window.alert(error instanceof Error ? error.message : 'JPEG-exporten misslyckades.');
+      console.error(t.exportFailed, error);
+      window.alert(error instanceof Error ? error.message : t.exportFailed);
     }
   };
 
@@ -171,12 +183,15 @@ export default function App() {
         onFileNameChange={setFileName}
         activeLayer={activeLayer}
         onLayerChange={handleLayerChange}
+        language={language}
+        onLanguageChange={setLanguage}
       />
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <Canvas
           shapes={allShapes}
           selectedId={selectedId}
           tool={tool}
+          language={language}
           svgRef={canvasRef}
           onTextChange={handleTextChange}
           onCanvasPointerDown={handleCanvasPointerDown}
@@ -186,6 +201,7 @@ export default function App() {
           onPointerUp={handlePointerUp}
         />
         <PropertiesPanel
+          language={language}
           selectedShape={shapes.find((shape) => shape.id === selectedId) ?? null}
           onPositionChange={handlePositionChange}
           onSizeChange={handleSizeChange}

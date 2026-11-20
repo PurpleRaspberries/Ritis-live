@@ -1,9 +1,11 @@
 // Visar och redigerar egenskaper för det objekt som är markerat på canvasen.
 // Tar emot objekt och ändringsfunktioner från App och använder färgväljaren.
 import type { Layer, Shape } from '../types';
+import { translations, type Language } from '../i18n';
 import { ColorPicker } from './ColorPicker';
 
 interface PropertiesPanelProps {
+  language: Language;
   selectedShape: Shape | null;
   onPositionChange: (axis: 'x' | 'y', value: number) => void;
   onSizeChange: (dimension: 'width' | 'height', value: number) => void;
@@ -14,6 +16,7 @@ interface PropertiesPanelProps {
 }
 
 export function PropertiesPanel({
+  language,
   selectedShape,
   onPositionChange,
   onSizeChange,
@@ -22,6 +25,7 @@ export function PropertiesPanel({
   onLayerChange,
   onColorChange,
 }: PropertiesPanelProps) {
+  const t = translations[language];
   const getPositionValue = (axis: 'x' | 'y') => {
     if (!selectedShape) return 0;
     if (selectedShape.type === 'circle') {
@@ -62,14 +66,14 @@ export function PropertiesPanel({
         textAlign: 'left',
       }}
     >
-      <h2 style={{ marginTop: 0, fontSize: '18px' }}>Egenskaper</h2>
+      <h2 style={{ marginTop: 0, fontSize: '18px' }}>{t.propertiesTitle}</h2>
 
       {!selectedShape ? (
-        <p>Markera ett objekt för att ändra dess egenskaper.</p>
+        <p>{t.noSelection}</p>
       ) : (
         <>
           <label style={{ display: 'block', marginBottom: '12px' }}>
-            Placering X
+            {t.xPosition}
             <input
               type="number"
               value={getPositionValue('x')}
@@ -79,7 +83,7 @@ export function PropertiesPanel({
           </label>
 
           <label style={{ display: 'block', marginBottom: '12px' }}>
-            Placering Y
+            {t.yPosition}
             <input
               type="number"
               value={getPositionValue('y')}
@@ -91,7 +95,7 @@ export function PropertiesPanel({
           {selectedShape.type === 'text' ? (
             <>
               <label style={{ display: 'block', marginBottom: '12px' }}>
-                Text
+                {t.text}
                 <input
                   type="text"
                   value={selectedShape.text}
@@ -101,7 +105,7 @@ export function PropertiesPanel({
               </label>
 
               <label style={{ display: 'block', marginBottom: '12px' }}>
-                Textstorlek
+                {t.textSize}
                 <input
                   type="number"
                   min={8}
@@ -114,7 +118,7 @@ export function PropertiesPanel({
           ) : (
             <>
               <label style={{ display: 'block', marginBottom: '12px' }}>
-                Bredd
+                {t.width}
                 <input
                   type="number"
                   min={selectedShape.type === 'line' ? 0 : 10}
@@ -125,7 +129,7 @@ export function PropertiesPanel({
               </label>
 
               <label style={{ display: 'block', marginBottom: '12px' }}>
-                Höjd
+                {t.height}
                 <input
                   type="number"
                   min={selectedShape.type === 'line' ? 0 : 10}
@@ -138,21 +142,21 @@ export function PropertiesPanel({
           )}
 
           <label style={{ display: 'block', marginBottom: '12px' }}>
-            Lager
+            {t.layer}
             <select
               value={selectedShape.layer}
               onChange={(e) => onLayerChange(Number(e.target.value) as Layer)}
               style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
             >
               {[1, 2, 3, 4, 5].map((layer) => (
-                <option key={layer} value={layer}>Lager {layer}</option>
+                <option key={layer} value={layer}>{t.layerOption(layer)}</option>
               ))}
             </select>
           </label>
 
           {selectedShape.type !== 'rainbow' && (
             <>
-              <ColorPicker color={selectedShape.color} onColorChange={onColorChange} />
+              <ColorPicker color={selectedShape.color} onColorChange={onColorChange} language={language} />
             </>
           )}
         </>

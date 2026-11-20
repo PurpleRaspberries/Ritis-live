@@ -2,11 +2,13 @@
 // Tar emot data och pekarhändelser från App och skickar textändringar tillbaka.
 import React from 'react';
 import type { ResizeHandle, Shape, Tool } from '../types';
+import { translations, type Language } from '../i18n';
 
 interface CanvasProps {
   shapes: Shape[];
   selectedId: string | null;
   tool: Tool;
+  language: Language;
   svgRef: React.Ref<SVGSVGElement>;
   onTextChange: (id: string, text: string) => void;
   onCanvasPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -253,6 +255,7 @@ export function Canvas({
   shapes,
   selectedId,
   tool,
+  language,
   svgRef,
   onTextChange,
   onCanvasPointerDown,
@@ -261,6 +264,7 @@ export function Canvas({
   onPointerMove,
   onPointerUp,
 }: CanvasProps) {
+  const t = translations[language];
   const [editingTextId, setEditingTextId] = React.useState<string | null>(null);
   const shapesRef = React.useRef(shapes);
   shapesRef.current = shapes;
@@ -347,7 +351,7 @@ export function Canvas({
                 stroke={showTextSelection ? '#111827' : 'none'}
                 strokeWidth={showTextSelection ? 1 : 0}
                 strokeDasharray={showTextSelection ? '5,5' : undefined}
-                aria-label="Dubbelklicka för att redigera texten"
+                aria-label={t.doubleClickToEditText}
                 onPointerDown={(e) => onShapePointerDown(e, shape.id)}
                 onDoubleClick={(e) => {
                   if (tool !== 'select' || !isSelected) return;
@@ -360,7 +364,7 @@ export function Canvas({
                   <input
                     type="text"
                     value={shape.text}
-                    aria-label="Redigera text på canvasen"
+                    aria-label={t.editTextOnCanvas}
                     autoFocus
                     onChange={(e) => onTextChange(shape.id, e.target.value)}
                     onBlur={() => setEditingTextId(null)}
