@@ -5,18 +5,18 @@ Ritis är en enkel, barnvänlig ritapp byggd med React, TypeScript och Vite.
 
 ## Använda ritverktygen
 
-- Välj ett verktyg och rita på den vita ytan. Välj färg med färgväljaren.
-- Öppna **Figurer** för att rita hjärta, kanin, regnbåge, moln eller enhörning.
+- **Frihand** är valt från början: dra direkt på ritytan för att rita med pennan. Varje sammanhängande streck blir ett flyttbart objekt. Välj färg och pennans tjocklek i egenskapspanelen när Frihand eller Linje används.
+- Öppna **Figurer** för att rita hjärta, kanin, regnbåge, moln, enhörning, sol, stjärna, pepparkaka, blomma eller blad.
 - Välj **Flytta** för att markera och flytta objekt. **Ta bort vald sak** tar bort det markerade objektet.
-- **Börja om** rensar hela ritningen.
-- Under **Fler val** kan du byta språk, välja lager och bakgrundsfärg eller göra bakgrunden genomskinlig. Där kan du också namnge och spara ritningen, öppna en tidigare sparad ritning eller exportera den som JPEG, PNG eller SVG.
+- **Börja om** frågar först om du vill rensa hela ritningen.
+- Under **Fler val** kan du byta språk, välja lager och bakgrundsfärg eller göra bakgrunden genomskinlig. Där kan du också namnge och spara ritningen, öppna en tidigare sparad ritning, exportera den som JPEG, PNG eller SVG och läsa mer om Ritis under **Om Ritis**.
 - En genomskinlig bakgrund sparas i ritningsfilen. PNG och SVG kan behålla transparensen; JPEG får vit bakgrund.
 
 ## Projektstruktur
 
 - `index.html` och `src/main.tsx` startar appen och laddar den globala stilen.
 - `src/App.tsx` håller appens tillstånd och kopplar samman verktygsfält, canvas och egenskapspanel.
-- `src/components/` innehåller gränssnittets delar: `Canvas`, `Toolbar`, `PropertiesPanel` och `ColorPicker`.
+- `src/components/` innehåller gränssnittets delar, inklusive dialoger för bakgrund, omstart och information om Ritis.
 - `src/hooks/usePointerEvents.ts` hanterar ritning, markering, flytt och storleksändring.
 - `src/utils/` innehåller hjälpfunktioner för koordinater samt import och export av ritningar.
 - `src/types.ts` samlar gemensamma TypeScript-typer för verktyg, lager och former.

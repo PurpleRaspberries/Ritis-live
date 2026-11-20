@@ -17,12 +17,24 @@ export interface AppStrings {
   deleteSelected: string;
   restart: string;
   restartAriaLabel: string;
+  restartDialogTitle: string;
+  confirmRestart: string;
+  cancelRestart: string;
+  confirmRestartAriaLabel: string;
+  cancelRestartAriaLabel: string;
   layer: string;
   layerOption: (layer: number) => string;
   imageName: string;
   backgroundColor: string;
+  backgroundDialogTitle: string;
   transparentBackground: string;
+  confirmBackground: string;
+  cancelBackground: string;
   jpegTransparencyNote: string;
+  about: string;
+  aboutTitle: string;
+  aboutDescription: string;
+  closeAbout: string;
   save: string;
   saveAsJpeg: string;
   saveAsPng: string;
@@ -46,6 +58,7 @@ export interface AppStrings {
   textSize: string;
   width: string;
   height: string;
+  penThickness: string;
   doubleClickToEditText: string;
   editTextOnCanvas: string;
   invalidDrawing: string;
@@ -73,6 +86,12 @@ export const translations: Record<Language, AppStrings> = {
       rainbow: 'Regnbåge',
       cloud: 'Moln',
       unicorn: 'Enhörning',
+      sun: 'Sol',
+      star: 'Stjärna',
+      gingerbread: 'Pepparkaka',
+      flower: 'Blomma',
+      leaf: 'Blad',
+      freehand: 'Frihand',
     },
     toolInstructions: {
       select: 'Tryck på en sak för att flytta den.',
@@ -85,6 +104,12 @@ export const translations: Record<Language, AppStrings> = {
       rainbow: 'Dra på pappret för att rita en regnbåge.',
       cloud: 'Dra på pappret för att rita ett moln.',
       unicorn: 'Dra på pappret för att rita en enhörning.',
+      sun: 'Dra på pappret för att rita en sol.',
+      star: 'Dra på pappret för att rita en stjärna.',
+      gingerbread: 'Dra på pappret för att rita en pepparkaka.',
+      flower: 'Dra på pappret för att rita en blomma.',
+      leaf: 'Dra på pappret för att rita ett blad.',
+      freehand: 'Dra på pappret för att rita med fri hand.',
     },
     languageLabel: 'Språk',
     languageAriaLabel: 'Välj språk',
@@ -96,12 +121,24 @@ export const translations: Record<Language, AppStrings> = {
     deleteSelected: 'Ta bort vald sak',
     restart: 'Börja om',
     restartAriaLabel: 'Börja om och rensa hela bilden',
+    restartDialogTitle: 'Vill du börja om?',
+    confirmRestart: 'Ja',
+    cancelRestart: 'Nej',
+    confirmRestartAriaLabel: 'Ja, rensa teckningen',
+    cancelRestartAriaLabel: 'Nej, behåll teckningen',
     layer: 'Lager',
     layerOption: (layer) => `Lager ${layer}`,
     imageName: 'Namn på bilden',
     backgroundColor: 'Bakgrundsfärg',
+    backgroundDialogTitle: 'Välj bakgrund',
     transparentBackground: 'Genomskinlig bakgrund',
+    confirmBackground: 'Bekräfta',
+    cancelBackground: 'Avbryt',
     jpegTransparencyNote: 'JPEG får vit bakgrund. PNG och SVG kan behålla genomskinligheten.',
+    about: 'Om Ritis',
+    aboutTitle: 'Om Ritis',
+    aboutDescription: 'Ritis är en enkel ritapp för barn. Rita med färger och figurer, lägg till text, flytta objekt och spara eller exportera dina bilder.',
+    closeAbout: 'Stäng',
     save: 'Spara ritning',
     saveAsJpeg: 'Exportera JPEG',
     saveAsPng: 'Exportera PNG',
@@ -134,6 +171,7 @@ export const translations: Record<Language, AppStrings> = {
     textSize: 'Textstorlek',
     width: 'Bredd',
     height: 'Höjd',
+    penThickness: 'Pennans tjocklek',
     doubleClickToEditText: 'Dubbelklicka för att redigera texten',
     editTextOnCanvas: 'Redigera text på canvasen',
     invalidDrawing: 'Filen verkar inte vara en giltig ritning.',
@@ -159,6 +197,12 @@ export const translations: Record<Language, AppStrings> = {
       rainbow: 'Rainbow',
       cloud: 'Cloud',
       unicorn: 'Unicorn',
+      sun: 'Sun',
+      star: 'Star',
+      gingerbread: 'Gingerbread',
+      flower: 'Flower',
+      leaf: 'Leaf',
+      freehand: 'Freehand',
     },
     toolInstructions: {
       select: 'Tap an object to move it.',
@@ -171,6 +215,12 @@ export const translations: Record<Language, AppStrings> = {
       rainbow: 'Drag on the paper to draw a rainbow.',
       cloud: 'Drag on the paper to draw a cloud.',
       unicorn: 'Drag on the paper to draw a unicorn.',
+      sun: 'Drag on the paper to draw a sun.',
+      star: 'Drag on the paper to draw a star.',
+      gingerbread: 'Drag on the paper to draw a gingerbread cookie.',
+      flower: 'Drag on the paper to draw a flower.',
+      leaf: 'Drag on the paper to draw a leaf.',
+      freehand: 'Drag on the paper to draw freehand.',
     },
     languageLabel: 'Language',
     languageAriaLabel: 'Choose language',
@@ -182,12 +232,24 @@ export const translations: Record<Language, AppStrings> = {
     deleteSelected: 'Delete selected',
     restart: 'Start over',
     restartAriaLabel: 'Start over and clear the whole picture',
+    restartDialogTitle: 'Do you want to start over?',
+    confirmRestart: 'Yes',
+    cancelRestart: 'No',
+    confirmRestartAriaLabel: 'Yes, clear the drawing',
+    cancelRestartAriaLabel: 'No, keep the drawing',
     layer: 'Layer',
     layerOption: (layer) => `Layer ${layer}`,
     imageName: 'Picture name',
     backgroundColor: 'Background color',
+    backgroundDialogTitle: 'Choose background',
     transparentBackground: 'Transparent background',
+    confirmBackground: 'Confirm',
+    cancelBackground: 'Cancel',
     jpegTransparencyNote: 'JPEG uses a white background. PNG and SVG can keep the transparency.',
+    about: 'About Ritis',
+    aboutTitle: 'About Ritis',
+    aboutDescription: 'Ritis is a simple drawing app for children. Draw with colors and shapes, add text, move objects, and save or export your pictures.',
+    closeAbout: 'Close',
     save: 'Save drawing',
     saveAsJpeg: 'Export JPEG',
     saveAsPng: 'Export PNG',
@@ -220,6 +282,7 @@ export const translations: Record<Language, AppStrings> = {
     textSize: 'Text size',
     width: 'Width',
     height: 'Height',
+    penThickness: 'Pen thickness',
     doubleClickToEditText: 'Double-click to edit the text',
     editTextOnCanvas: 'Edit text on the canvas',
     invalidDrawing: 'This does not seem to be a valid drawing.',
@@ -245,6 +308,12 @@ export const translations: Record<Language, AppStrings> = {
       rainbow: 'Regenbogen',
       cloud: 'Wolke',
       unicorn: 'Einhorn',
+      sun: 'Sonne',
+      star: 'Stern',
+      gingerbread: 'Lebkuchen',
+      flower: 'Blume',
+      leaf: 'Blatt',
+      freehand: 'Freihand',
     },
     toolInstructions: {
       select: 'Tippe auf ein Objekt, um es zu bewegen.',
@@ -257,6 +326,12 @@ export const translations: Record<Language, AppStrings> = {
       rainbow: 'Ziehe über das Papier, um einen Regenbogen zu malen.',
       cloud: 'Ziehe über das Papier, um eine Wolke zu malen.',
       unicorn: 'Ziehe über das Papier, um ein Einhorn zu malen.',
+      sun: 'Ziehe über das Papier, um eine Sonne zu malen.',
+      star: 'Ziehe über das Papier, um einen Stern zu malen.',
+      gingerbread: 'Ziehe über das Papier, um einen Lebkuchen zu malen.',
+      flower: 'Ziehe über das Papier, um eine Blume zu malen.',
+      leaf: 'Ziehe über das Papier, um ein Blatt zu malen.',
+      freehand: 'Ziehe über das Papier, um freihändig zu malen.',
     },
     languageLabel: 'Sprache',
     languageAriaLabel: 'Sprache auswählen',
@@ -268,12 +343,24 @@ export const translations: Record<Language, AppStrings> = {
     deleteSelected: 'Ausgewähltes löschen',
     restart: 'Neu anfangen',
     restartAriaLabel: 'Neu anfangen und das ganze Bild löschen',
+    restartDialogTitle: 'Möchtest du neu anfangen?',
+    confirmRestart: 'Ja',
+    cancelRestart: 'Nein',
+    confirmRestartAriaLabel: 'Ja, Zeichnung löschen',
+    cancelRestartAriaLabel: 'Nein, Zeichnung behalten',
     layer: 'Ebene',
     layerOption: (layer) => `Ebene ${layer}`,
     imageName: 'Bildname',
     backgroundColor: 'Hintergrundfarbe',
+    backgroundDialogTitle: 'Hintergrund auswählen',
     transparentBackground: 'Transparenter Hintergrund',
+    confirmBackground: 'Übernehmen',
+    cancelBackground: 'Abbrechen',
     jpegTransparencyNote: 'JPEG hat einen weißen Hintergrund. PNG und SVG können transparent bleiben.',
+    about: 'Über Ritis',
+    aboutTitle: 'Über Ritis',
+    aboutDescription: 'Ritis ist eine einfache Mal-App für Kinder. Male mit Farben und Formen, füge Text hinzu, bewege Objekte und speichere oder exportiere deine Bilder.',
+    closeAbout: 'Schließen',
     save: 'Zeichnung speichern',
     saveAsJpeg: 'JPEG exportieren',
     saveAsPng: 'PNG exportieren',
@@ -306,6 +393,7 @@ export const translations: Record<Language, AppStrings> = {
     textSize: 'Textgröße',
     width: 'Breite',
     height: 'Höhe',
+    penThickness: 'Stiftdicke',
     doubleClickToEditText: 'Doppelklicken, um den Text zu bearbeiten',
     editTextOnCanvas: 'Text auf der Zeichenfläche bearbeiten',
     invalidDrawing: 'Diese Datei scheint keine gültige Zeichnung zu sein.',

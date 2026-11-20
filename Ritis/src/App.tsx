@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Layer, Shape, Tool } from './types';
 import { isLanguage, translations, type Language } from './i18n';
 import { Toolbar } from './components/Toolbar';
+import { RestartConfirmationDialog } from './components/RestartConfirmationDialog';
 import { Canvas } from './components/Canvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { usePointerEvents } from './hooks/usePointerEvents';
@@ -17,11 +18,13 @@ import {
 
 export default function App() {
   const [shapes, setShapes] = useState<Shape[]>([]);
-  const [tool, setTool] = useState<Tool>('rect');
+  const [tool, setTool] = useState<Tool>('freehand');
   const [color, setColor] = useState('#3b82f6');
+  const [penWidth, setPenWidth] = useState(10);
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [restartDialogOpen, setRestartDialogOpen] = useState(false);
   const [fileName, setFileName] = useState('min-ritning');
   const [activeLayer, setActiveLayer] = useState<Layer>(1);
   const [language, setLanguage] = useState<Language>(() => {
@@ -51,10 +54,12 @@ export default function App() {
     handleResizePointerDown,
     handlePointerMove,
     handlePointerUp,
+    handleCanvasPointerLeave,
   } = usePointerEvents({
     tool,
     setTool,
     color,
+    penWidth,
     shapes,
     setShapes,
     selectedId,
@@ -78,6 +83,12 @@ export default function App() {
     if (!selectedId) return;
     setShapes((prev) => prev.filter((s) => s.id !== selectedId));
     setSelectedId(null);
+  };
+
+  const handleConfirmRestart = () => {
+    setShapes([]);
+    setSelectedId(null);
+    setRestartDialogOpen(false);
   };
 
   const handleOpenFile = (file: File) => {
@@ -213,7 +224,7 @@ export default function App() {
         onColorChange={handleColorChange}
         hasSelection={Boolean(selectedId)}
         onDeleteSelected={deleteSelected}
-        onClearAll={() => { setShapes([]); setSelectedId(null); }}
+        onRestartRequest={() => setRestartDialogOpen(true)}
         onSave={handleSaveDrawing}
         onExportJpeg={handleExportJpeg}
         onExportPng={handleExportPng}
@@ -247,9 +258,14 @@ export default function App() {
           onResizePointerDown={handleResizePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
+          onPointerLeave={handleCanvasPointerLeave}
         />
         <PropertiesPanel
           language={language}
+          tool={tool}
+          penWidth={penWidth}
+          penColor={color}
+          onPenWidthChange={setPenWidth}
           selectedShape={shapes.find((shape) => shape.id === selectedId) ?? null}
           onPositionChange={handlePositionChange}
           onSizeChange={handleSizeChange}
@@ -261,6 +277,13 @@ export default function App() {
           onColorChange={handleColorChange}
         />
       </div>
+      {restartDialogOpen && (
+        <RestartConfirmationDialog
+          language={language}
+          onConfirm={handleConfirmRestart}
+          onCancel={() => setRestartDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,9 +1,11 @@
 // Visar ritverktyg, figurmeny och inställningar för färg och canvasbakgrund.
 // Skickar användarens val samt filåtgärder vidare till App.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Layer, Tool } from '../types';
 import { isLanguage, translations, type Language } from '../i18n';
 import { ColorPicker } from './ColorPicker';
+import { BackgroundSettingsDialog } from './BackgroundSettingsDialog';
+import { AboutDialog } from './AboutDialog';
 
 interface ToolbarProps {
   tool: Tool;
@@ -12,7 +14,7 @@ interface ToolbarProps {
   onColorChange: (color: string) => void;
   hasSelection: boolean;
   onDeleteSelected: () => void;
-  onClearAll: () => void;
+  onRestartRequest: () => void;
   onSave: () => void;
   onExportJpeg: () => void;
   onExportPng: () => void;
@@ -31,6 +33,7 @@ interface ToolbarProps {
 }
 
 const tools: Array<{ tool: Tool; icon: string }> = [
+  { tool: 'freehand', icon: '✏️' },
   { tool: 'select', icon: '👆' },
   { tool: 'rect', icon: '🟦' },
   { tool: 'circle', icon: '🔵' },
@@ -44,6 +47,11 @@ const shapeTools: Array<{ tool: Tool; icon: string }> = [
   { tool: 'rainbow', icon: '🌈' },
   { tool: 'cloud', icon: '☁️' },
   { tool: 'unicorn', icon: '🦄' },
+  { tool: 'sun', icon: '☀️' },
+  { tool: 'star', icon: '⭐' },
+  { tool: 'gingerbread', icon: '🍪' },
+  { tool: 'flower', icon: '🌼' },
+  { tool: 'leaf', icon: '🍃' },
 ];
 
 const languages: Language[] = ['sv', 'en', 'de'];
@@ -55,7 +63,7 @@ export function Toolbar({
   onColorChange,
   hasSelection,
   onDeleteSelected,
-  onClearAll,
+  onRestartRequest,
   onSave,
   onExportJpeg,
   onExportPng,
@@ -76,6 +84,8 @@ export function Toolbar({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shapeMenuRef = useRef<HTMLDetailsElement>(null);
   const moreMenuRef = useRef<HTMLDetailsElement>(null);
+  const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
+  const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
 
   useEffect(() => {
     const closeMenusOnOutsideClick = (event: PointerEvent) => {
@@ -167,7 +177,7 @@ export function Toolbar({
           <button
             type="button"
             className="toolbar-tool toolbar-reset"
-            onClick={onClearAll}
+            onClick={onRestartRequest}
             aria-label={t.restartAriaLabel}
           >
             <span className="toolbar-tool-icon" aria-hidden="true">🧹</span>
@@ -219,27 +229,18 @@ export function Toolbar({
             />
           </label>
 
-          <label className="toolbar-setting">
-            {t.backgroundColor}
-            <input
-              type="color"
-              value={backgroundColor}
-              aria-label={t.backgroundColor}
-              onChange={(e) => onBackgroundColorChange(e.target.value)}
+          <button
+            type="button"
+            className="toolbar-background-open"
+            onClick={() => handleMoreMenuAction(() => setBackgroundDialogOpen(true))}
+          >
+            <span
+              className={`toolbar-background-preview${backgroundTransparent ? ' is-transparent' : ''}`}
+              style={backgroundTransparent ? undefined : { backgroundColor }}
+              aria-hidden="true"
             />
-          </label>
-
-          <label className="toolbar-background-toggle">
-            <input
-              type="checkbox"
-              checked={backgroundTransparent}
-              onChange={(e) => onBackgroundTransparentChange(e.target.checked)}
-            />
-            {t.transparentBackground}
-          </label>
-          {backgroundTransparent && (
-            <p className="toolbar-note">{t.jpegTransparencyNote}</p>
-          )}
+            <span>{backgroundTransparent ? t.transparentBackground : t.backgroundColor}</span>
+          </button>
 
           <div className="toolbar-actions">
             <button type="button" onClick={() => handleMoreMenuAction(onSave)}>💾 {t.save}</button>
@@ -247,6 +248,7 @@ export function Toolbar({
             <button type="button" onClick={() => handleMoreMenuAction(onExportPng)}>🖼️ {t.saveAsPng}</button>
             <button type="button" onClick={() => handleMoreMenuAction(onExportSvg)}>📐 {t.saveAsSvg}</button>
             <button type="button" onClick={() => handleMoreMenuAction(() => fileInputRef.current?.click())}>📂 {t.openDrawing}</button>
+            <button type="button" onClick={() => handleMoreMenuAction(() => setAboutDialogOpen(true))}>ℹ️ {t.about}</button>
           </div>
 
           <input
@@ -258,6 +260,25 @@ export function Toolbar({
           />
         </div>
       </details>
+      {backgroundDialogOpen && (
+        <BackgroundSettingsDialog
+          language={language}
+          backgroundColor={backgroundColor}
+          backgroundTransparent={backgroundTransparent}
+          onConfirm={(nextColor, nextTransparent) => {
+            onBackgroundColorChange(nextColor);
+            onBackgroundTransparentChange(nextTransparent);
+            setBackgroundDialogOpen(false);
+          }}
+          onCancel={() => setBackgroundDialogOpen(false)}
+        />
+      )}
+      {aboutDialogOpen && (
+        <AboutDialog
+          language={language}
+          onClose={() => setAboutDialogOpen(false)}
+        />
+      )}
     </header>
   );
 }

@@ -1,11 +1,15 @@
 // Visar och redigerar egenskaper för det objekt som är markerat på canvasen.
 // Tar emot objekt och ändringsfunktioner från App och använder färgväljaren.
-import type { Layer, Shape } from '../types';
+import type { Layer, Shape, Tool } from '../types';
 import { translations, type Language } from '../i18n';
 import { ColorPicker } from './ColorPicker';
 
 interface PropertiesPanelProps {
   language: Language;
+  tool: Tool;
+  penWidth: number;
+  penColor: string;
+  onPenWidthChange: (width: number) => void;
   selectedShape: Shape | null;
   onPositionChange: (axis: 'x' | 'y', value: number) => void;
   onSizeChange: (dimension: 'width' | 'height', value: number) => void;
@@ -17,6 +21,10 @@ interface PropertiesPanelProps {
 
 export function PropertiesPanel({
   language,
+  tool,
+  penWidth,
+  penColor,
+  onPenWidthChange,
   selectedShape,
   onPositionChange,
   onSizeChange,
@@ -26,6 +34,7 @@ export function PropertiesPanel({
   onColorChange,
 }: PropertiesPanelProps) {
   const t = translations[language];
+  const showsPenWidth = tool === 'freehand' || tool === 'line';
   const getPositionValue = (axis: 'x' | 'y') => {
     if (!selectedShape) return 0;
     if (selectedShape.type === 'circle') {
@@ -56,111 +65,151 @@ export function PropertiesPanel({
   };
 
   return (
-    <aside
+    <div
       style={{
         width: '220px',
         boxSizing: 'border-box',
-        padding: '16px',
         borderLeft: '1px solid #ccc',
         background: '#f9fafb',
-        textAlign: 'left',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
       }}
     >
-      <h2 style={{ marginTop: 0, fontSize: '18px' }}>{t.propertiesTitle}</h2>
-
-      {!selectedShape ? (
-        <p>{t.noSelection}</p>
-      ) : (
-        <>
-          <label style={{ display: 'block', marginBottom: '12px' }}>
-            {t.xPosition}
+      {showsPenWidth && (
+        <div className="pen-width-setting" style={{ margin: '16px 16px 0' }}>
+          <label htmlFor="pen-width-slider">{t.penThickness}</label>
+          <div className="pen-width-slider-row">
+            <span className="pen-width-endpoint pen-width-small" aria-hidden="true" />
             <input
-              type="number"
-              value={getPositionValue('x')}
-              onChange={(e) => onPositionChange('x', Number(e.target.value))}
-              style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+              id="pen-width-slider"
+              type="range"
+              min={4}
+              max={32}
+              step={2}
+              value={penWidth}
+              aria-label={t.penThickness}
+              onChange={(event) => onPenWidthChange(Number(event.target.value))}
             />
-          </label>
-
-          <label style={{ display: 'block', marginBottom: '12px' }}>
-            {t.yPosition}
-            <input
-              type="number"
-              value={getPositionValue('y')}
-              onChange={(e) => onPositionChange('y', Number(e.target.value))}
-              style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+            <span className="pen-width-endpoint pen-width-large" aria-hidden="true" />
+          </div>
+          <svg className="pen-width-preview" viewBox="0 0 100 40" aria-hidden="true">
+            <line
+              x1="14"
+              y1="20"
+              x2="86"
+              y2="20"
+              stroke={penColor}
+              strokeWidth={penWidth}
+              strokeLinecap="round"
             />
-          </label>
-
-          {selectedShape.type === 'text' ? (
-            <>
-              <label style={{ display: 'block', marginBottom: '12px' }}>
-                {t.text}
-                <input
-                  type="text"
-                  value={selectedShape.text}
-                  onChange={(e) => onTextChange(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
-                />
-              </label>
-
-              <label style={{ display: 'block', marginBottom: '12px' }}>
-                {t.textSize}
-                <input
-                  type="number"
-                  min={8}
-                  value={selectedShape.fontSize}
-                  onChange={(e) => onTextSizeChange(Number(e.target.value))}
-                  style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
-                />
-              </label>
-            </>
-          ) : (
-            <>
-              <label style={{ display: 'block', marginBottom: '12px' }}>
-                {t.width}
-                <input
-                  type="number"
-                  min={selectedShape.type === 'line' ? 0 : 10}
-                  value={getSizeValue('width')}
-                  onChange={(e) => onSizeChange('width', Number(e.target.value))}
-                  style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
-                />
-              </label>
-
-              <label style={{ display: 'block', marginBottom: '12px' }}>
-                {t.height}
-                <input
-                  type="number"
-                  min={selectedShape.type === 'line' ? 0 : 10}
-                  value={getSizeValue('height')}
-                  onChange={(e) => onSizeChange('height', Number(e.target.value))}
-                  style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
-                />
-              </label>
-            </>
-          )}
-
-          <label style={{ display: 'block', marginBottom: '12px' }}>
-            {t.layer}
-            <select
-              value={selectedShape.layer}
-              onChange={(e) => onLayerChange(Number(e.target.value) as Layer)}
-              style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
-            >
-              {[1, 2, 3, 4, 5].map((layer) => (
-                <option key={layer} value={layer}>{t.layerOption(layer)}</option>
-              ))}
-            </select>
-          </label>
-
-          {selectedShape.type !== 'rainbow' && (
-            <>
-              <ColorPicker color={selectedShape.color} onColorChange={onColorChange} language={language} />
-            </>
-          )}
-        </>
+          </svg>
+        </div>
       )}
-    </aside>
+      <aside
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          padding: '16px',
+          textAlign: 'left',
+        }}
+      >
+        <h2 style={{ marginTop: 0, fontSize: '18px' }}>{t.propertiesTitle}</h2>
+        {!selectedShape ? (
+          showsPenWidth ? null : <p>{t.noSelection}</p>
+        ) : (
+          <>
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              {t.xPosition}
+              <input
+                type="number"
+                value={getPositionValue('x')}
+                onChange={(e) => onPositionChange('x', Number(e.target.value))}
+                style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+              />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              {t.yPosition}
+              <input
+                type="number"
+                value={getPositionValue('y')}
+                onChange={(e) => onPositionChange('y', Number(e.target.value))}
+                style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+              />
+            </label>
+
+            {selectedShape.type === 'text' ? (
+              <>
+                <label style={{ display: 'block', marginBottom: '12px' }}>
+                  {t.text}
+                  <input
+                    type="text"
+                    value={selectedShape.text}
+                    onChange={(e) => onTextChange(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+                  />
+                </label>
+
+                <label style={{ display: 'block', marginBottom: '12px' }}>
+                  {t.textSize}
+                  <input
+                    type="number"
+                    min={8}
+                    value={selectedShape.fontSize}
+                    onChange={(e) => onTextSizeChange(Number(e.target.value))}
+                    style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <label style={{ display: 'block', marginBottom: '12px' }}>
+                  {t.width}
+                  <input
+                    type="number"
+                    min={selectedShape.type === 'line' ? 0 : 10}
+                    value={getSizeValue('width')}
+                    onChange={(e) => onSizeChange('width', Number(e.target.value))}
+                    style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+                  />
+                </label>
+
+                <label style={{ display: 'block', marginBottom: '12px' }}>
+                  {t.height}
+                  <input
+                    type="number"
+                    min={selectedShape.type === 'line' ? 0 : 10}
+                    value={getSizeValue('height')}
+                    onChange={(e) => onSizeChange('height', Number(e.target.value))}
+                    style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+                  />
+                </label>
+              </>
+            )}
+
+            <label style={{ display: 'block', marginBottom: '12px' }}>
+              {t.layer}
+              <select
+                value={selectedShape.layer}
+                onChange={(e) => onLayerChange(Number(e.target.value) as Layer)}
+                style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+              >
+                {[1, 2, 3, 4, 5].map((layer) => (
+                  <option key={layer} value={layer}>{t.layerOption(layer)}</option>
+                ))}
+              </select>
+            </label>
+
+            {selectedShape.type !== 'rainbow' && (
+              <>
+                <ColorPicker color={selectedShape.color} onColorChange={onColorChange} language={language} />
+              </>
+            )}
+          </>
+        )}
+      </aside>
+    </div>
   );
 }

@@ -17,6 +17,7 @@ interface CanvasProps {
   onResizePointerDown: (e: React.PointerEvent<SVGRectElement>, id: string, handle: ResizeHandle) => void;
   onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
   onPointerUp: () => void;
+  onPointerLeave: (e: React.PointerEvent<SVGSVGElement>) => void;
 }
 
 function createHeartPath(x: number, y: number, w: number, h: number): string {
@@ -62,6 +63,76 @@ function createCloudPath(x: number, y: number, w: number, h: number): string {
     `C ${p(100, 58)}, ${p(98, 74)}, ${p(84, 74)}`,
     `Z`,
   ].join(' ');
+}
+
+function createStarPath(x: number, y: number, width: number, height: number): string {
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  const points = Array.from({ length: 10 }, (_, index) => {
+    const angle = -Math.PI / 2 + index * Math.PI / 5;
+    const radius = index % 2 === 0 ? 0.5 : 0.23;
+    const pointX = centerX + Math.cos(angle) * width * radius;
+    const pointY = centerY + Math.sin(angle) * height * radius;
+    return `${index === 0 ? 'M' : 'L'} ${pointX} ${pointY}`;
+  });
+  return `${points.join(' ')} Z`;
+}
+
+function createGingerbreadPath(x: number, y: number, width: number, height: number): string {
+  const sx = width / 100;
+  const sy = height / 100;
+  const p = (px: number, py: number) => `${x + px * sx} ${y + py * sy}`;
+  return [
+    `M ${p(50, 4)}`,
+    `C ${p(37, 4)}, ${p(28, 14)}, ${p(28, 27)}`,
+    `C ${p(28, 34)}, ${p(32, 40)}, ${p(38, 44)}`,
+    `L ${p(27, 47)}`,
+    `C ${p(19, 49)}, ${p(13, 55)}, ${p(12, 62)}`,
+    `C ${p(11, 68)}, ${p(16, 72)}, ${p(21, 69)}`,
+    `L ${p(31, 60)} L ${p(34, 75)} L ${p(25, 89)}`,
+    `C ${p(21, 95)}, ${p(30, 101)}, ${p(35, 95)}`,
+    `L ${p(49, 78)} L ${p(51, 78)} L ${p(65, 95)}`,
+    `C ${p(70, 101)}, ${p(79, 95)}, ${p(75, 89)}`,
+    `L ${p(66, 75)} L ${p(69, 60)} L ${p(79, 69)}`,
+    `C ${p(84, 72)}, ${p(89, 68)}, ${p(88, 62)}`,
+    `C ${p(87, 55)}, ${p(81, 49)}, ${p(73, 47)}`,
+    `L ${p(62, 44)}`,
+    `C ${p(68, 40)}, ${p(72, 34)}, ${p(72, 27)}`,
+    `C ${p(72, 14)}, ${p(63, 4)}, ${p(50, 4)} Z`,
+  ].join(' ');
+}
+
+function createLeafPath(x: number, y: number, width: number, height: number): string {
+  const sx = width / 100;
+  const sy = height / 100;
+  const p = (px: number, py: number) => `${x + px * sx} ${y + py * sy}`;
+  return [
+    `M ${p(50, 2)}`,
+    `C ${p(7, 23)}, ${p(10, 76)}, ${p(50, 98)}`,
+    `C ${p(90, 76)}, ${p(93, 23)}, ${p(50, 2)} Z`,
+  ].join(' ');
+}
+
+function createFreehandPath(points: Array<{ x: number; y: number }>): string {
+  if (points.length === 0) return '';
+  if (points.length === 1) {
+    const point = points[0];
+    return `M ${point.x} ${point.y} l 0.001 0`;
+  }
+
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let index = 1; index < points.length; index += 1) {
+    const point = points[index];
+    if (index < points.length - 1) {
+      const nextPoint = points[index + 1];
+      const middleX = (point.x + nextPoint.x) / 2;
+      const middleY = (point.y + nextPoint.y) / 2;
+      path += ` Q ${point.x} ${point.y} ${middleX} ${middleY}`;
+    } else {
+      path += ` L ${point.x} ${point.y}`;
+    }
+  }
+  return path;
 }
 
 function createUnicornPaths(
@@ -265,6 +336,7 @@ export function Canvas({
   onResizePointerDown,
   onPointerMove,
   onPointerUp,
+  onPointerLeave,
 }: CanvasProps) {
   const t = translations[language];
   const [editingTextId, setEditingTextId] = React.useState<string | null>(null);
@@ -298,6 +370,7 @@ export function Canvas({
       onPointerDown={onCanvasPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerLeave={onPointerLeave}
       style={{
         flex: 1,
         background: backgroundColor,
@@ -310,11 +383,56 @@ export function Canvas({
         const sharedProps = {
           fill: shape.type === 'rainbow' || shape.type === 'line' ? 'none' : shape.color,
           stroke: shape.type === 'line' ? shape.color : isSelected ? '#111827' : 'none',
-          strokeWidth: shape.type === 'line' ? 4 : isSelected ? 2 : 0,
+          strokeWidth: shape.type === 'line' ? shape.strokeWidth ?? 4 : isSelected ? 2 : 0,
           strokeDasharray: isSelected && shape.type !== 'line' ? '5,5' : undefined,
           style: { cursor: tool === 'select' ? 'move' : 'crosshair' },
           onPointerDown: (e: React.PointerEvent<SVGElement>) => onShapePointerDown(e, shape.id),
         };
+
+        if (shape.type === 'freehand') {
+          return (
+            <g
+              key={shape.id}
+              style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}
+              onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+            >
+              <path
+                d={createFreehandPath(shape.points)}
+                transform={`matrix(${shape.width} 0 0 ${shape.height} ${shape.x} ${shape.y})`}
+                fill="none"
+                stroke={shape.color}
+                strokeWidth={shape.strokeWidth}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              {isSelected && (
+                <rect
+                  x={shape.x}
+                  y={shape.y}
+                  width={shape.width}
+                  height={shape.height}
+                  fill="none"
+                  stroke="#111827"
+                  strokeDasharray="5,5"
+                  style={{ pointerEvents: 'none' }}
+                  data-export-ignore="true"
+                />
+              )}
+              {isSelected && tool === 'select' && (
+                <ResizeHandles
+                  id={shape.id}
+                  left={shape.x}
+                  top={shape.y}
+                  right={shape.x + shape.width}
+                  bottom={shape.y + shape.height}
+                  showSideHandles={true}
+                  onResizePointerDown={onResizePointerDown}
+                />
+              )}
+            </g>
+          );
+        }
 
         if (shape.type === 'line') {
           return (
@@ -482,6 +600,150 @@ export function Canvas({
           return (
             <g key={shape.id}>
               <path d={createCloudPath(shape.x, shape.y, shape.width, shape.height)} {...sharedProps} />
+              {isSelected && tool === 'select' && (
+                <ResizeHandles
+                  id={shape.id}
+                  left={shape.x}
+                  top={shape.y}
+                  right={shape.x + shape.width}
+                  bottom={shape.y + shape.height}
+                  showSideHandles={true}
+                  onResizePointerDown={onResizePointerDown}
+                />
+              )}
+            </g>
+          );
+        }
+
+        if (
+          shape.type === 'sun'
+          || shape.type === 'star'
+          || shape.type === 'gingerbread'
+          || shape.type === 'flower'
+          || shape.type === 'leaf'
+        ) {
+          const centerX = shape.x + shape.width / 2;
+          const centerY = shape.y + shape.height / 2;
+          const size = Math.min(shape.width, shape.height);
+          let drawing: React.ReactNode;
+
+          if (shape.type === 'sun') {
+            const radius = size * 0.31;
+            const rayStart = size * 0.36;
+            const rayEnd = size * 0.47;
+            drawing = (
+              <g>
+                {Array.from({ length: 8 }, (_, index) => {
+                  const angle = index * Math.PI / 4;
+                  return (
+                    <line
+                      key={index}
+                      x1={centerX + Math.cos(angle) * rayStart}
+                      y1={centerY + Math.sin(angle) * rayStart}
+                      x2={centerX + Math.cos(angle) * rayEnd}
+                      y2={centerY + Math.sin(angle) * rayEnd}
+                      stroke={shape.color}
+                      strokeWidth={Math.max(2, size * 0.07)}
+                      strokeLinecap="round"
+                    />
+                  );
+                })}
+                <circle
+                  cx={centerX}
+                  cy={centerY}
+                  r={radius}
+                  fill={shape.color}
+                />
+              </g>
+            );
+          } else if (shape.type === 'star') {
+            drawing = <path d={createStarPath(shape.x, shape.y, shape.width, shape.height)} fill={shape.color} />;
+          } else if (shape.type === 'gingerbread') {
+            drawing = (
+              <g>
+                <path
+                  d={createGingerbreadPath(shape.x, shape.y, shape.width, shape.height)}
+                  fill={shape.color}
+                  stroke="#92400e"
+                  strokeWidth={Math.max(1.5, size * 0.02)}
+                  strokeLinejoin="round"
+                />
+                <circle cx={shape.x + shape.width * 0.42} cy={shape.y + shape.height * 0.23} r={Math.max(1.5, size * 0.025)} fill="#fff7ed" />
+                <circle cx={shape.x + shape.width * 0.58} cy={shape.y + shape.height * 0.23} r={Math.max(1.5, size * 0.025)} fill="#fff7ed" />
+                <circle cx={centerX} cy={shape.y + shape.height * 0.5} r={Math.max(2, size * 0.04)} fill="#ef4444" />
+                <circle cx={centerX} cy={shape.y + shape.height * 0.62} r={Math.max(2, size * 0.04)} fill="#22c55e" />
+              </g>
+            );
+          } else if (shape.type === 'flower') {
+            drawing = (
+              <g>
+                {Array.from({ length: 8 }, (_, index) => {
+                  const angle = index * Math.PI / 4;
+                  return (
+                    <ellipse
+                      key={index}
+                      cx={centerX + Math.cos(angle) * shape.width * 0.25}
+                      cy={centerY + Math.sin(angle) * shape.height * 0.25}
+                      rx={shape.width * 0.2}
+                      ry={shape.height * 0.2}
+                      fill={shape.color}
+                    />
+                  );
+                })}
+                <circle
+                  cx={centerX}
+                  cy={centerY}
+                  r={size * 0.16}
+                  fill="#facc15"
+                />
+              </g>
+            );
+          } else {
+            drawing = (
+              <g>
+                <path
+                  d={createLeafPath(shape.x, shape.y, shape.width, shape.height)}
+                  fill={shape.color}
+                  stroke="#166534"
+                  strokeWidth={Math.max(1.5, size * 0.02)}
+                />
+                <path
+                  d={[
+                    `M ${centerX} ${shape.y + shape.height * 0.9}`,
+                    `Q ${centerX} ${centerY}, ${centerX} ${shape.y + shape.height * 0.1}`,
+                    `M ${centerX} ${centerY + shape.height * 0.16} L ${shape.x + shape.width * 0.27} ${centerY - shape.height * 0.06}`,
+                    `M ${centerX} ${centerY + shape.height * 0.03} L ${shape.x + shape.width * 0.74} ${centerY - shape.height * 0.19}`,
+                    `M ${centerX} ${centerY - shape.height * 0.12} L ${shape.x + shape.width * 0.34} ${centerY - shape.height * 0.33}`,
+                  ].join(' ')}
+                  fill="none"
+                  stroke="#166534"
+                  strokeWidth={Math.max(1, size * 0.015)}
+                  pointerEvents="none"
+                />
+              </g>
+            );
+          }
+
+          return (
+            <g
+              key={shape.id}
+              style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}
+              onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+            >
+              {drawing}
+              {isSelected && (
+                <rect
+                  x={shape.x}
+                  y={shape.y}
+                  width={shape.width}
+                  height={shape.height}
+                  fill="none"
+                  stroke="#111827"
+                  strokeDasharray="5,5"
+                  style={{ pointerEvents: 'none' }}
+                  data-export-ignore="true"
+                />
+              )}
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}

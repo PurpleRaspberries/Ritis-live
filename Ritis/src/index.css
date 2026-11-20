@@ -316,6 +316,224 @@ body {
   line-height: 1.35;
 }
 
+.pen-width-setting {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 2px solid #c4b5fd;
+  border-radius: 14px;
+  background: #fff;
+  color: #1e293b;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pen-width-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pen-width-slider-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  accent-color: #7c3aed;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.pen-width-slider-row input[type='range']:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.pen-width-slider-row input[type='range']::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #ddd6fe;
+}
+
+.pen-width-slider-row input[type='range']::-moz-range-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #ddd6fe;
+}
+
+.pen-width-slider-row input[type='range']::-webkit-slider-thumb {
+  width: 28px;
+  height: 28px;
+  margin-top: -8px;
+  appearance: none;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #7c3aed;
+  box-shadow: 0 1px 5px rgb(15 23 42 / 35%);
+}
+
+.pen-width-slider-row input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #7c3aed;
+  box-shadow: 0 1px 5px rgb(15 23 42 / 35%);
+}
+
+.pen-width-endpoint {
+  display: block;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+.pen-width-small {
+  width: 8px;
+  height: 8px;
+}
+
+.pen-width-large {
+  width: 22px;
+  height: 22px;
+}
+
+.pen-width-preview {
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.toolbar-background-open {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 2px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #1e293b;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toolbar-background-open:hover {
+  background: #f1f5f9;
+}
+
+.toolbar-background-preview {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 2px solid #94a3b8;
+  border-radius: 8px;
+}
+
+.toolbar-background-preview.is-transparent,
+.background-dialog-transparent-preview {
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #cbd5e1 25%, transparent 25%),
+    linear-gradient(-45deg, #cbd5e1 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #cbd5e1 75%),
+    linear-gradient(-45deg, transparent 75%, #cbd5e1 75%);
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-size: 16px 16px;
+}
+
+.background-dialog-options {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.background-dialog-option {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 2px solid #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.background-dialog-choice {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  color: #1e293b;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.background-dialog-choice input[type='radio'] {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  accent-color: #7c3aed;
+  cursor: pointer;
+}
+
+.background-dialog-color-input {
+  width: 88px;
+  height: 60px;
+  flex: 0 0 auto;
+  padding: 4px;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.background-dialog-color-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.background-dialog-transparent-preview {
+  width: 88px;
+  height: 60px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  border: 2px solid #94a3b8;
+  border-radius: 12px;
+}
+
+.background-dialog-note {
+  margin: -8px 0 20px;
+  text-align: left;
+}
+
+.about-dialog-description {
+  max-width: 34rem;
+  margin: 0 auto 24px;
+  color: #334155;
+  font-size: 20px;
+  line-height: 1.45;
+}
+
+.about-dialog-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.about-dialog-close {
+  min-width: min(100%, 240px);
+  min-height: 80px;
+}
+
 .toolbar-actions {
   display: grid;
   gap: 8px;
@@ -348,6 +566,131 @@ body {
     linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
   background-position: 0 0, 0 12px, 12px -12px, -12px 0;
   background-size: 24px 24px;
+}
+
+.restart-dialog {
+  position: fixed;
+  width: min(620px, calc(100vw - 32px));
+  max-width: 620px;
+  max-height: calc(100vh - 32px);
+  box-sizing: border-box;
+  margin: auto;
+  padding: clamp(22px, 5vw, 40px);
+  overflow: auto;
+  border: 4px solid #c4b5fd;
+  border-radius: 28px;
+  background: #fff;
+  color: #1e293b;
+  text-align: center;
+  box-shadow: 0 18px 60px rgb(15 23 42 / 30%);
+}
+
+.restart-dialog::backdrop {
+  background: rgb(15 23 42 / 68%);
+  backdrop-filter: blur(3px);
+}
+
+.restart-dialog-icon {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 76px;
+  line-height: 1;
+}
+
+.restart-dialog h2 {
+  margin: 0 0 24px;
+  color: #1e293b;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.restart-dialog-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.restart-dialog-button {
+  display: flex;
+  min-width: 0;
+  min-height: 126px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: 3px solid transparent;
+  border-radius: 20px;
+  color: #fff;
+  font: inherit;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+
+.restart-dialog-button:hover {
+  filter: brightness(1.07);
+  transform: translateY(-2px);
+}
+
+.restart-dialog-button:focus-visible {
+  outline: 4px solid #1e293b;
+  outline-offset: 3px;
+}
+
+.restart-dialog-confirm {
+  background: #16a34a;
+}
+
+.restart-dialog-cancel {
+  background: #dc2626;
+}
+
+.restart-dialog-button-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+@media (max-width: 420px) {
+  .restart-dialog {
+    padding: 20px 14px;
+  }
+
+  .restart-dialog h2 {
+    font-size: 26px;
+  }
+
+  .restart-dialog-actions {
+    gap: 10px;
+  }
+
+  .restart-dialog-button {
+    min-height: 108px;
+    font-size: 24px;
+  }
+
+  .background-dialog-option {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .background-dialog-choice {
+    gap: 8px;
+    font-size: 17px;
+  }
+
+  .background-dialog-color-input,
+  .background-dialog-transparent-preview {
+    width: 64px;
+    height: 52px;
+  }
+
+  .about-dialog-description {
+    font-size: 18px;
+  }
 }
 
 h1,

@@ -4,10 +4,17 @@ import { useState } from 'react';
 import type { Layer, ResizeHandle, Shape, Tool } from '../types';
 import { getSvgCoords } from '../utils/geometry';
 
+type BoundedShape = Extract<Shape, { x: number; y: number; width: number; height: number }>;
+
+function isBoundedShape(shape: Shape): shape is BoundedShape {
+  return 'width' in shape;
+}
+
 interface UsePointerProps {
   tool: Tool;
   setTool: (tool: Tool) => void;
   color: string;
+  penWidth: number;
   shapes: Shape[];
   setShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
   selectedId: string | null;
@@ -20,6 +27,7 @@ export function usePointerEvents({
   tool,
   setTool,
   color,
+  penWidth,
   shapes,
   setShapes,
   selectedId,
@@ -54,6 +62,24 @@ export function usePointerEvents({
       return;
     }
 
+    if (tool === 'freehand') {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setDraftShape({
+        id,
+        type: 'freehand',
+        x: pos.x - 0.5,
+        y: pos.y - 0.5,
+        width: 1,
+        height: 1,
+        points: [{ x: 0.5, y: 0.5 }],
+        strokeWidth: penWidth,
+        color,
+        layer: activeLayer,
+      });
+      setSelectedId(null);
+      return;
+    }
+
     setSelectedId(null);
 
     if (tool === 'rect') {
@@ -61,7 +87,17 @@ export function usePointerEvents({
     } else if (tool === 'circle') {
       setDraftShape({ id, type: 'circle', cx: pos.x, cy: pos.y, r: 0, color, layer: activeLayer });
     } else if (tool === 'line') {
-      setDraftShape({ id, type: 'line', x1: pos.x, y1: pos.y, x2: pos.x, y2: pos.y, color, layer: activeLayer });
+      setDraftShape({
+        id,
+        type: 'line',
+        x1: pos.x,
+        y1: pos.y,
+        x2: pos.x,
+        y2: pos.y,
+        strokeWidth: penWidth,
+        color,
+        layer: activeLayer,
+      });
     } else if (tool === 'heart') {
       setDraftShape({ id, type: 'heart', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
     } else if (tool === 'rabbit') {
@@ -72,6 +108,16 @@ export function usePointerEvents({
       setDraftShape({ id, type: 'cloud', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
     } else if (tool === 'unicorn') {
       setDraftShape({ id, type: 'unicorn', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+    } else if (tool === 'sun') {
+      setDraftShape({ id, type: 'sun', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+    } else if (tool === 'star') {
+      setDraftShape({ id, type: 'star', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+    } else if (tool === 'gingerbread') {
+      setDraftShape({ id, type: 'gingerbread', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+    } else if (tool === 'flower') {
+      setDraftShape({ id, type: 'flower', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+    } else if (tool === 'leaf') {
+      setDraftShape({ id, type: 'leaf', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
     }
   };
 
@@ -132,7 +178,7 @@ export function usePointerEvents({
           if (shape.type === 'text') {
             return { ...shape, x: shape.x + dx, y: shape.y + dy };
           }
-          if (shape.type === 'rect' || shape.type === 'heart' || shape.type === 'rabbit' || shape.type === 'rainbow' || shape.type === 'cloud' || shape.type === 'unicorn') {
+          if (isBoundedShape(shape)) {
             return { ...shape, x: shape.x + dx, y: shape.y + dy };
           }
           return { ...shape, cx: shape.cx + dx, cy: shape.cy + dy };
@@ -148,7 +194,7 @@ export function usePointerEvents({
         prev.map((shape) => {
           if (shape.id !== selectedId) return shape;
 
-          if (shape.type === 'rect' || shape.type === 'heart' || shape.type === 'rabbit' || shape.type === 'rainbow' || shape.type === 'cloud' || shape.type === 'unicorn') {
+          if (isBoundedShape(shape)) {
             let left = shape.x;
             let top = shape.y;
             let right = shape.x + shape.width;
@@ -199,9 +245,36 @@ export function usePointerEvents({
     }
 
     if (!draftShape) return;
-    if (draftShape.type === 'line') {
+    if (draftShape.type === 'freehand') {
+      const points = draftShape.points.map((point) => ({
+        x: draftShape.x + point.x * draftShape.width,
+        y: draftShape.y + point.y * draftShape.height,
+      }));
+      const lastPoint = points[points.length - 1];
+      if (lastPoint && Math.hypot(pos.x - lastPoint.x, pos.y - lastPoint.y) < 1) return;
+
+      points.push(pos);
+      const minX = Math.min(...points.map((point) => point.x));
+      const minY = Math.min(...points.map((point) => point.y));
+      const width = Math.max(...points.map((point) => point.x)) - minX;
+      const height = Math.max(...points.map((point) => point.y)) - minY;
+      const normalizedWidth = Math.max(width, 1);
+      const normalizedHeight = Math.max(height, 1);
+
+      setDraftShape({
+        ...draftShape,
+        x: minX,
+        y: minY,
+        width: normalizedWidth,
+        height: normalizedHeight,
+        points: points.map((point) => ({
+          x: (point.x - minX) / normalizedWidth,
+          y: (point.y - minY) / normalizedHeight,
+        })),
+      });
+    } else if (draftShape.type === 'line') {
       setDraftShape({ ...draftShape, x2: pos.x, y2: pos.y });
-    } else if (draftShape.type === 'rect' || draftShape.type === 'heart' || draftShape.type === 'rabbit' || draftShape.type === 'rainbow' || draftShape.type === 'cloud' || draftShape.type === 'unicorn') {
+    } else if (isBoundedShape(draftShape)) {
       setDraftShape({
         ...draftShape,
         x: Math.min(startPos.x, pos.x),
@@ -218,12 +291,18 @@ export function usePointerEvents({
 
   const handlePointerUp = () => {
     if (draftShape) {
-      setShapes([...shapes, draftShape]);
+      setShapes((prev) => [...prev, draftShape]);
       setDraftShape(null);
     }
     setStartPos(null);
     setIsDragging(false);
     setResizeHandle(null);
+  };
+
+  const handleCanvasPointerLeave = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (draftShape?.type === 'freehand' && e.buttons === 0) {
+      handlePointerUp();
+    }
   };
 
   return {
@@ -233,5 +312,6 @@ export function usePointerEvents({
     handleResizePointerDown,
     handlePointerMove,
     handlePointerUp,
+    handleCanvasPointerLeave,
   };
 }
