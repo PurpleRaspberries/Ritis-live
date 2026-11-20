@@ -7,12 +7,20 @@ import { Toolbar } from './components/Toolbar';
 import { Canvas } from './components/Canvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { usePointerEvents } from './hooks/usePointerEvents';
-import { saveDrawingToFile, loadDrawingFromFile, exportDrawingToJpeg } from './utils/storage';
+import {
+  saveDrawingToFile,
+  loadDrawingFromFile,
+  exportDrawingToJpeg,
+  exportDrawingToPng,
+  exportDrawingToSvg,
+} from './utils/storage';
 
 export default function App() {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [tool, setTool] = useState<Tool>('rect');
   const [color, setColor] = useState('#3b82f6');
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fileName, setFileName] = useState('min-ritning');
   const [activeLayer, setActiveLayer] = useState<Layer>(1);
@@ -73,11 +81,18 @@ export default function App() {
   };
 
   const handleOpenFile = (file: File) => {
-    loadDrawingFromFile(file, (loadedShapes) => {
+    loadDrawingFromFile(file, (loadedShapes, loadedBackgroundColor) => {
       setShapes(loadedShapes);
       setSelectedId(null);
+      setBackgroundTransparent(loadedBackgroundColor === null);
+      if (loadedBackgroundColor !== null) setBackgroundColor(loadedBackgroundColor);
       setFileName(file.name.replace(/\.json$/i, '') || 'min-ritning');
     }, language);
+  };
+
+  const handleBackgroundColorChange = (newColor: string) => {
+    setBackgroundColor(newColor);
+    setBackgroundTransparent(false);
   };
 
   const handleLayerChange = (layer: Layer) => {
@@ -148,19 +163,42 @@ export default function App() {
     )));
   };
 
-  const handleExportJpeg = async () => {
+  const handleSaveDrawing = async () => {
+    try {
+      await saveDrawingToFile(
+        shapes,
+        fileName,
+        language,
+        backgroundTransparent ? null : backgroundColor,
+      );
+    } catch (error) {
+      console.error(t.saveFailed, error);
+      window.alert(t.saveFailed);
+    }
+  };
+
+  const handleExport = async (exportDrawing: typeof exportDrawingToJpeg) => {
     if (!canvasRef.current) {
       window.alert(t.missingCanvasForExport);
       return;
     }
 
     try {
-      await exportDrawingToJpeg(canvasRef.current, fileName, language);
+      await exportDrawing(
+        canvasRef.current,
+        fileName,
+        language,
+        backgroundTransparent ? null : backgroundColor,
+      );
     } catch (error) {
       console.error(t.exportFailed, error);
-      window.alert(error instanceof Error ? error.message : t.exportFailed);
+      window.alert(t.exportFailed);
     }
   };
+
+  const handleExportJpeg = () => handleExport(exportDrawingToJpeg);
+  const handleExportPng = () => handleExport(exportDrawingToPng);
+  const handleExportSvg = () => handleExport(exportDrawingToSvg);
 
   // Förhandsgranskningen inkluderar den pågående formen; lager sorteras före ritning.
   const allShapes = (draftShape ? [...shapes, draftShape] : [...shapes])
@@ -176,8 +214,10 @@ export default function App() {
         hasSelection={Boolean(selectedId)}
         onDeleteSelected={deleteSelected}
         onClearAll={() => { setShapes([]); setSelectedId(null); }}
-        onSave={() => saveDrawingToFile(shapes, fileName)}
+        onSave={handleSaveDrawing}
         onExportJpeg={handleExportJpeg}
+        onExportPng={handleExportPng}
+        onExportSvg={handleExportSvg}
         onOpenFile={handleOpenFile}
         fileName={fileName}
         onFileNameChange={setFileName}
@@ -185,13 +225,21 @@ export default function App() {
         onLayerChange={handleLayerChange}
         language={language}
         onLanguageChange={setLanguage}
+        backgroundColor={backgroundColor}
+        backgroundTransparent={backgroundTransparent}
+        onBackgroundColorChange={handleBackgroundColorChange}
+        onBackgroundTransparentChange={setBackgroundTransparent}
       />
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      <div
+        className={backgroundTransparent ? 'canvas-transparent-background' : undefined}
+        style={{ display: 'flex', flex: 1, minHeight: 0 }}
+      >
         <Canvas
           shapes={allShapes}
           selectedId={selectedId}
           tool={tool}
           language={language}
+          backgroundColor={backgroundTransparent ? 'transparent' : backgroundColor}
           svgRef={canvasRef}
           onTextChange={handleTextChange}
           onCanvasPointerDown={handleCanvasPointerDown}

@@ -1,5 +1,5 @@
-// Visar ritverktyg, färgval och figurmeny och skickar användarens val till App.
-// Samlar även omstart, objektborttagning och avancerade ritningsfunktioner.
+// Visar ritverktyg, figurmeny och inställningar för färg och canvasbakgrund.
+// Skickar användarens val samt filåtgärder vidare till App.
 import { useEffect, useRef } from 'react';
 import type { Layer, Tool } from '../types';
 import { isLanguage, translations, type Language } from '../i18n';
@@ -15,6 +15,8 @@ interface ToolbarProps {
   onClearAll: () => void;
   onSave: () => void;
   onExportJpeg: () => void;
+  onExportPng: () => void;
+  onExportSvg: () => void;
   onOpenFile: (file: File) => void;
   fileName: string;
   onFileNameChange: (fileName: string) => void;
@@ -22,6 +24,10 @@ interface ToolbarProps {
   onLayerChange: (layer: Layer) => void;
   language: Language;
   onLanguageChange: (language: Language) => void;
+  backgroundColor: string;
+  backgroundTransparent: boolean;
+  onBackgroundColorChange: (color: string) => void;
+  onBackgroundTransparentChange: (transparent: boolean) => void;
 }
 
 const tools: Array<{ tool: Tool; icon: string }> = [
@@ -52,6 +58,8 @@ export function Toolbar({
   onClearAll,
   onSave,
   onExportJpeg,
+  onExportPng,
+  onExportSvg,
   onOpenFile,
   fileName,
   onFileNameChange,
@@ -59,6 +67,10 @@ export function Toolbar({
   onLayerChange,
   language,
   onLanguageChange,
+  backgroundColor,
+  backgroundTransparent,
+  onBackgroundColorChange,
+  onBackgroundTransparentChange,
 }: ToolbarProps) {
   const t = translations[language];
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -207,9 +219,33 @@ export function Toolbar({
             />
           </label>
 
+          <label className="toolbar-setting">
+            {t.backgroundColor}
+            <input
+              type="color"
+              value={backgroundColor}
+              aria-label={t.backgroundColor}
+              onChange={(e) => onBackgroundColorChange(e.target.value)}
+            />
+          </label>
+
+          <label className="toolbar-background-toggle">
+            <input
+              type="checkbox"
+              checked={backgroundTransparent}
+              onChange={(e) => onBackgroundTransparentChange(e.target.checked)}
+            />
+            {t.transparentBackground}
+          </label>
+          {backgroundTransparent && (
+            <p className="toolbar-note">{t.jpegTransparencyNote}</p>
+          )}
+
           <div className="toolbar-actions">
             <button type="button" onClick={() => handleMoreMenuAction(onSave)}>💾 {t.save}</button>
             <button type="button" onClick={() => handleMoreMenuAction(onExportJpeg)}>🖼️ {t.saveAsJpeg}</button>
+            <button type="button" onClick={() => handleMoreMenuAction(onExportPng)}>🖼️ {t.saveAsPng}</button>
+            <button type="button" onClick={() => handleMoreMenuAction(onExportSvg)}>📐 {t.saveAsSvg}</button>
             <button type="button" onClick={() => handleMoreMenuAction(() => fileInputRef.current?.click())}>📂 {t.openDrawing}</button>
           </div>
 

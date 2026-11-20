@@ -1,4 +1,4 @@
-// Ritar formerna och redigeringshandtagen i programmets SVG-canvas.
+// Ritar canvasens bakgrund, former och redigeringshandtag i SVG.
 // Tar emot data och pekarhändelser från App och skickar textändringar tillbaka.
 import React from 'react';
 import type { ResizeHandle, Shape, Tool } from '../types';
@@ -9,6 +9,7 @@ interface CanvasProps {
   selectedId: string | null;
   tool: Tool;
   language: Language;
+  backgroundColor: string;
   svgRef: React.Ref<SVGSVGElement>;
   onTextChange: (id: string, text: string) => void;
   onCanvasPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -256,6 +257,7 @@ export function Canvas({
   selectedId,
   tool,
   language,
+  backgroundColor,
   svgRef,
   onTextChange,
   onCanvasPointerDown,
@@ -298,7 +300,7 @@ export function Canvas({
       onPointerUp={onPointerUp}
       style={{
         flex: 1,
-        background: 'white',
+        background: backgroundColor,
         cursor: tool === 'select' ? 'default' : 'crosshair',
         touchAction: 'none',
       }}
@@ -360,7 +362,13 @@ export function Canvas({
                 }}
               />
               {isEditing && (
-                <foreignObject x={shape.x} y={shape.y} width={textWidth} height={textHeight}>
+                <foreignObject
+                  x={shape.x}
+                  y={shape.y}
+                  width={textWidth}
+                  height={textHeight}
+                  data-export-ignore="true"
+                >
                   <input
                     type="text"
                     value={shape.text}

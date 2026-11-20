@@ -20,9 +20,19 @@ export interface AppStrings {
   layer: string;
   layerOption: (layer: number) => string;
   imageName: string;
+  backgroundColor: string;
+  transparentBackground: string;
+  jpegTransparencyNote: string;
   save: string;
   saveAsJpeg: string;
+  saveAsPng: string;
+  saveAsSvg: string;
   openDrawing: string;
+  saveFailed: string;
+  jsonFileType: string;
+  jpegFileType: string;
+  pngFileType: string;
+  svgFileType: string;
   colorLabel: string;
   colorNames: Record<ColorName, string>;
   customColor: string;
@@ -46,11 +56,12 @@ export interface AppStrings {
   failedToLoadForExport: string;
   failedToCreateImageSurface: string;
   failedToCreateJpeg: string;
+  failedToCreatePng: string;
 }
 
 export const translations: Record<Language, AppStrings> = {
   sv: {
-    appTitle: 'Rita och lek!',
+    appTitle: 'Ritis',
     toolLabels: {
       select: 'Flytta',
       rect: 'Ruta',
@@ -88,9 +99,19 @@ export const translations: Record<Language, AppStrings> = {
     layer: 'Lager',
     layerOption: (layer) => `Lager ${layer}`,
     imageName: 'Namn på bilden',
-    save: 'Spara',
-    saveAsJpeg: 'Spara som bild',
+    backgroundColor: 'Bakgrundsfärg',
+    transparentBackground: 'Genomskinlig bakgrund',
+    jpegTransparencyNote: 'JPEG får vit bakgrund. PNG och SVG kan behålla genomskinligheten.',
+    save: 'Spara ritning',
+    saveAsJpeg: 'Exportera JPEG',
+    saveAsPng: 'Exportera PNG',
+    saveAsSvg: 'Exportera SVG',
     openDrawing: 'Öppna ritning',
+    saveFailed: 'Kunde inte spara filen.',
+    jsonFileType: 'JSON-ritning',
+    jpegFileType: 'JPEG-bild',
+    pngFileType: 'PNG-bild',
+    svgFileType: 'SVG-bild',
     colorLabel: 'Färg',
     colorNames: {
       red: 'Röd',
@@ -118,14 +139,15 @@ export const translations: Record<Language, AppStrings> = {
     invalidDrawing: 'Filen verkar inte vara en giltig ritning.',
     failedToReadDrawing: 'Kunde inte läsa filen. Kontrollera att det är en sparad JSON-ritning.',
     missingCanvasForExport: 'Kunde inte hitta ritytan för export.',
-    exportFailed: 'JPEG-exporten misslyckades.',
+    exportFailed: 'Bildexporten misslyckades.',
     invalidCanvasSize: 'Ritytan saknar en giltig storlek.',
     failedToLoadForExport: 'Kunde inte läsa in ritningen för export.',
-    failedToCreateImageSurface: 'Kunde inte skapa en bildyta för JPEG-exporten.',
+    failedToCreateImageSurface: 'Kunde inte skapa en bildyta för exporten.',
     failedToCreateJpeg: 'Kunde inte skapa JPEG-filen.',
+    failedToCreatePng: 'Kunde inte skapa PNG-filen.',
   },
   en: {
-    appTitle: 'Draw and play!',
+    appTitle: 'Ritis',
     toolLabels: {
       select: 'Move',
       rect: 'Rectangle',
@@ -163,9 +185,19 @@ export const translations: Record<Language, AppStrings> = {
     layer: 'Layer',
     layerOption: (layer) => `Layer ${layer}`,
     imageName: 'Picture name',
-    save: 'Save',
-    saveAsJpeg: 'Save as picture',
+    backgroundColor: 'Background color',
+    transparentBackground: 'Transparent background',
+    jpegTransparencyNote: 'JPEG uses a white background. PNG and SVG can keep the transparency.',
+    save: 'Save drawing',
+    saveAsJpeg: 'Export JPEG',
+    saveAsPng: 'Export PNG',
+    saveAsSvg: 'Export SVG',
     openDrawing: 'Open drawing',
+    saveFailed: 'Could not save the file.',
+    jsonFileType: 'JSON drawing',
+    jpegFileType: 'JPEG image',
+    pngFileType: 'PNG image',
+    svgFileType: 'SVG image',
     colorLabel: 'Color',
     colorNames: {
       red: 'Red',
@@ -193,14 +225,15 @@ export const translations: Record<Language, AppStrings> = {
     invalidDrawing: 'This does not seem to be a valid drawing.',
     failedToReadDrawing: 'Could not read the file. Make sure it is a saved JSON drawing.',
     missingCanvasForExport: 'Could not find the drawing area to export.',
-    exportFailed: 'JPEG export failed.',
+    exportFailed: 'Image export failed.',
     invalidCanvasSize: 'The drawing area does not have a valid size.',
     failedToLoadForExport: 'Could not load the drawing for export.',
-    failedToCreateImageSurface: 'Could not create an image surface for JPEG export.',
+    failedToCreateImageSurface: 'Could not create an image surface for export.',
     failedToCreateJpeg: 'Could not create the JPEG file.',
+    failedToCreatePng: 'Could not create the PNG file.',
   },
   de: {
-    appTitle: 'Malen und spielen!',
+    appTitle: 'Ritis',
     toolLabels: {
       select: 'Bewegen',
       rect: 'Rechteck',
@@ -238,9 +271,19 @@ export const translations: Record<Language, AppStrings> = {
     layer: 'Ebene',
     layerOption: (layer) => `Ebene ${layer}`,
     imageName: 'Bildname',
-    save: 'Speichern',
-    saveAsJpeg: 'Als Bild speichern',
+    backgroundColor: 'Hintergrundfarbe',
+    transparentBackground: 'Transparenter Hintergrund',
+    jpegTransparencyNote: 'JPEG hat einen weißen Hintergrund. PNG und SVG können transparent bleiben.',
+    save: 'Zeichnung speichern',
+    saveAsJpeg: 'JPEG exportieren',
+    saveAsPng: 'PNG exportieren',
+    saveAsSvg: 'SVG exportieren',
     openDrawing: 'Zeichnung öffnen',
+    saveFailed: 'Datei konnte nicht gespeichert werden.',
+    jsonFileType: 'JSON-Zeichnung',
+    jpegFileType: 'JPEG-Bild',
+    pngFileType: 'PNG-Bild',
+    svgFileType: 'SVG-Bild',
     colorLabel: 'Farbe',
     colorNames: {
       red: 'Rot',
@@ -268,11 +311,12 @@ export const translations: Record<Language, AppStrings> = {
     invalidDrawing: 'Diese Datei scheint keine gültige Zeichnung zu sein.',
     failedToReadDrawing: 'Datei konnte nicht gelesen werden. Stelle sicher, dass es eine gespeicherte JSON-Zeichnung ist.',
     missingCanvasForExport: 'Die Zeichenfläche für den Export wurde nicht gefunden.',
-    exportFailed: 'JPEG-Export fehlgeschlagen.',
+    exportFailed: 'Bildexport fehlgeschlagen.',
     invalidCanvasSize: 'Die Zeichenfläche hat keine gültige Größe.',
     failedToLoadForExport: 'Die Zeichnung konnte für den Export nicht geladen werden.',
-    failedToCreateImageSurface: 'Die Bildfläche für den JPEG-Export konnte nicht erstellt werden.',
+    failedToCreateImageSurface: 'Die Bildfläche für den Export konnte nicht erstellt werden.',
     failedToCreateJpeg: 'Die JPEG-Datei konnte nicht erstellt werden.',
+    failedToCreatePng: 'Die PNG-Datei konnte nicht erstellt werden.',
   },
 };
 

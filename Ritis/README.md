@@ -9,7 +9,8 @@ Ritis är en enkel, barnvänlig ritapp byggd med React, TypeScript och Vite.
 - Öppna **Figurer** för att rita hjärta, kanin, regnbåge, moln eller enhörning.
 - Välj **Flytta** för att markera och flytta objekt. **Ta bort vald sak** tar bort det markerade objektet.
 - **Börja om** rensar hela ritningen.
-- Under **Fler val** kan du välja lager, namnge ritningen, spara eller öppna en ritning och exportera den som JPEG.
+- Under **Fler val** kan du byta språk, välja lager och bakgrundsfärg eller göra bakgrunden genomskinlig. Där kan du också namnge och spara ritningen, öppna en tidigare sparad ritning eller exportera den som JPEG, PNG eller SVG.
+- En genomskinlig bakgrund sparas i ritningsfilen. PNG och SVG kan behålla transparensen; JPEG får vit bakgrund.
 
 ## Projektstruktur
 
