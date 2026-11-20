@@ -16,6 +16,7 @@ export type Tool =
   | 'gingerbread'
   | 'flower'
   | 'leaf'
+  | 'spiderweb'
   | 'freehand';
 export type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'line-start' | 'line-end';
 export type Layer = 1 | 2 | 3 | 4 | 5;
@@ -44,6 +45,7 @@ export type Shape =
   | { id: string; type: 'gingerbread'; x: number; y: number; width: number; height: number; color: string; layer: Layer }
   | { id: string; type: 'flower'; x: number; y: number; width: number; height: number; color: string; layer: Layer }
   | { id: string; type: 'leaf'; x: number; y: number; width: number; height: number; color: string; layer: Layer }
+  | { id: string; type: 'spiderweb'; x: number; y: number; width: number; height: number; strokeWidth: number; color: string; layer: Layer }
   | {
       id: string;
       type: 'freehand';

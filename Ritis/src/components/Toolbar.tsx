@@ -26,11 +26,15 @@ interface ToolbarProps {
 
 const tools: Array<{ tool: Tool; icon: string }> = [
   { tool: 'select', icon: '👆' },
+];
+
+const basicShapeTools: Array<{ tool: Tool; icon: string }> = [
   { tool: 'freehand', icon: '✏️' },
   { tool: 'rect', icon: '🟦' },
   { tool: 'circle', icon: '🔵' },
   { tool: 'line', icon: '〰️' },
   { tool: 'text', icon: '🔤' },
+  { tool: 'spiderweb', icon: '🕸️' },
 ];
 
 const shapeTools: Array<{ tool: Tool; icon: string }> = [
@@ -68,6 +72,7 @@ export function Toolbar({
   const t = translations[language];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shapeMenuRef = useRef<HTMLDetailsElement>(null);
+  const basicShapeMenuRef = useRef<HTMLDetailsElement>(null);
   const moreMenuRef = useRef<HTMLDetailsElement>(null);
   const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
@@ -78,7 +83,7 @@ export function Toolbar({
       const target = event.target;
       if (!(target instanceof Node)) return;
 
-      [moreMenuRef.current, shapeMenuRef.current].forEach((menu) => {
+      [moreMenuRef.current, shapeMenuRef.current, basicShapeMenuRef.current].forEach((menu) => {
         if (menu?.open && !menu.contains(target)) {
           menu.open = false;
         }
@@ -99,6 +104,7 @@ export function Toolbar({
 
   const handleShapeToolSelect = (shapeTool: Tool) => {
     setTool(shapeTool);
+    if (basicShapeMenuRef.current) basicShapeMenuRef.current.open = false;
     if (shapeMenuRef.current) shapeMenuRef.current.open = false;
   };
 
@@ -127,6 +133,26 @@ export function Toolbar({
               <span>{t.toolLabels[toolName]}</span>
             </button>
           ))}
+          <details ref={basicShapeMenuRef} className="toolbar-shapes-menu">
+            <summary className={`toolbar-tool toolbar-shapes-trigger${basicShapeTools.some(({ tool: shapeTool }) => shapeTool === tool) ? ' is-active' : ''}`}>
+              <span className="toolbar-tool-icon" aria-hidden="true">🔷</span>
+              <span>{t.basicShapes}</span>
+            </summary>
+            <div className="toolbar-shapes-panel" role="group" aria-label={t.additionalBasicShapes}>
+              {basicShapeTools.map(({ tool: shapeTool, icon }) => (
+                <button
+                  key={shapeTool}
+                  type="button"
+                  className={`toolbar-tool${tool === shapeTool ? ' is-active' : ''}`}
+                  onClick={() => handleShapeToolSelect(shapeTool)}
+                  aria-pressed={tool === shapeTool}
+                >
+                  <span className="toolbar-tool-icon" aria-hidden="true">{icon}</span>
+                  <span>{t.toolLabels[shapeTool]}</span>
+                </button>
+              ))}
+            </div>
+          </details>
           <details ref={shapeMenuRef} className="toolbar-shapes-menu">
             <summary className={`toolbar-tool toolbar-shapes-trigger${shapeTools.some(({ tool: shapeTool }) => shapeTool === tool) ? ' is-active' : ''}`}>
               <span className="toolbar-tool-icon" aria-hidden="true">✨</span>

@@ -129,6 +129,18 @@ export function usePointerEvents({
       setDraftShape({ id, type: 'flower', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
     } else if (tool === 'leaf') {
       setDraftShape({ id, type: 'leaf', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+    } else if (tool === 'spiderweb') {
+      setDraftShape({
+        id,
+        type: 'spiderweb',
+        x: pos.x,
+        y: pos.y,
+        width: 0,
+        height: 0,
+        strokeWidth: penWidth,
+        color,
+        layer: activeLayer,
+      });
     }
   };
 

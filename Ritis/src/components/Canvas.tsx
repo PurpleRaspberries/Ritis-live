@@ -136,6 +136,23 @@ function createFreehandPath(points: Array<{ x: number; y: number }>): string {
   return path;
 }
 
+function createSpiderwebSpokes(x: number, y: number, width: number, height: number) {
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  const radiusX = width / 2;
+  const radiusY = height / 2;
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const angle = (index * Math.PI) / 6;
+    return {
+      x1: centerX,
+      y1: centerY,
+      x2: centerX + Math.cos(angle) * radiusX,
+      y2: centerY + Math.sin(angle) * radiusY,
+    };
+  });
+}
+
 function createUnicornPaths(
   x: number,
   y: number,
@@ -762,6 +779,75 @@ export function Canvas({
               onPointerDown={(e) => onShapePointerDown(e, shape.id)}
             >
               {drawing}
+              {isSelected && (
+                <rect
+                  x={shape.x}
+                  y={shape.y}
+                  width={shape.width}
+                  height={shape.height}
+                  fill="none"
+                  stroke="#111827"
+                  strokeDasharray="5,5"
+                  style={{ pointerEvents: 'none' }}
+                  data-export-ignore="true"
+                />
+              )}
+              {isSelected && tool === 'select' && (
+                <ResizeHandles
+                  id={shape.id}
+                  left={shape.x}
+                  top={shape.y}
+                  right={shape.x + shape.width}
+                  bottom={shape.y + shape.height}
+                  showSideHandles={true}
+                  onResizePointerDown={onResizePointerDown}
+                />
+              )}
+            </g>
+          );
+        }
+
+        if (shape.type === 'spiderweb') {
+          const centerX = shape.x + shape.width / 2;
+          const centerY = shape.y + shape.height / 2;
+          return (
+            <g
+              key={shape.id}
+              style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}
+              onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+            >
+              <rect
+                x={shape.x}
+                y={shape.y}
+                width={shape.width}
+                height={shape.height}
+                fill="transparent"
+              />
+              {Array.from({ length: 6 }, (_, index) => {
+                const scale = (index + 1) / 6;
+                return (
+                  <ellipse
+                    key={`ring-${index}`}
+                    cx={centerX}
+                    cy={centerY}
+                    rx={shape.width * scale / 2}
+                    ry={shape.height * scale / 2}
+                    fill="none"
+                    stroke={shape.color}
+                    strokeWidth={shape.strokeWidth}
+                    pointerEvents="none"
+                  />
+                );
+              })}
+              {createSpiderwebSpokes(shape.x, shape.y, shape.width, shape.height).map((spoke, index) => (
+                <line
+                  key={`spoke-${index}`}
+                  {...spoke}
+                  stroke={shape.color}
+                  strokeWidth={shape.strokeWidth}
+                  pointerEvents="none"
+                />
+              ))}
               {isSelected && (
                 <rect
                   x={shape.x}

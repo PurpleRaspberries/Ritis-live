@@ -41,8 +41,10 @@ export function PropertiesPanel({
     ? selectedShape.strokeWidth ?? 4
     : selectedShape?.type === 'freehand'
       ? selectedShape.strokeWidth
-      : null;
-  const showsPenWidth = tool === 'freehand' || tool === 'line' || selectedStrokeWidth !== null;
+      : selectedShape?.type === 'spiderweb'
+        ? selectedShape.strokeWidth
+        : null;
+  const showsPenWidth = tool === 'freehand' || tool === 'line' || tool === 'spiderweb' || selectedStrokeWidth !== null;
   const displayedPenWidth = selectedStrokeWidth ?? penWidth;
   const displayedPenColor = selectedShape && selectedShape.type !== 'rainbow'
     ? selectedShape.color

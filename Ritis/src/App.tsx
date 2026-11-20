@@ -85,7 +85,7 @@ export default function App() {
     setPenWidth(width);
     if (!selectedId) return;
     setShapes((prev) => prev.map((shape) => (
-      shape.id === selectedId && (shape.type === 'freehand' || shape.type === 'line')
+      shape.id === selectedId && (shape.type === 'freehand' || shape.type === 'line' || shape.type === 'spiderweb')
         ? { ...shape, strokeWidth: width }
         : shape
     )));

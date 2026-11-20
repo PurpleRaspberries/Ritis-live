@@ -13,6 +13,8 @@ export interface AppStrings {
   languageAriaLabel: string;
   languageNames: Record<Language, string>;
   toolsAriaLabel: string;
+  basicShapes: string;
+  additionalBasicShapes: string;
   figures: string;
   additionalFigures: string;
   moreOptions: string;
@@ -101,7 +103,8 @@ export const translations: Record<Language, AppStrings> = {
       gingerbread: 'Pepparkaka',
       flower: 'Blomma',
       leaf: 'Blad',
-      freehand: 'Frihand',
+      spiderweb: 'Spindelnät',
+      freehand: 'Penna',
     },
     toolInstructions: {
       select: 'Tryck på en sak för att flytta den.',
@@ -119,12 +122,15 @@ export const translations: Record<Language, AppStrings> = {
       gingerbread: 'Dra på pappret för att rita en pepparkaka.',
       flower: 'Dra på pappret för att rita en blomma.',
       leaf: 'Dra på pappret för att rita ett blad.',
-      freehand: 'Dra på pappret för att rita med fri hand.',
+      spiderweb: 'Dra på pappret för att rita ett spindelnät.',
+      freehand: 'Dra på pappret för att rita med pennan.',
     },
     languageLabel: 'Språk',
     languageAriaLabel: 'Välj språk',
     languageNames: { sv: 'Svenska', en: 'English', de: 'Deutsch' },
     toolsAriaLabel: 'Ritverktyg',
+    basicShapes: 'Former',
+    additionalBasicShapes: 'Grundformer',
     figures: 'Figurer',
     additionalFigures: 'Fler ritfigurer',
     moreOptions: 'Fler val',
@@ -220,7 +226,8 @@ export const translations: Record<Language, AppStrings> = {
       gingerbread: 'Gingerbread',
       flower: 'Flower',
       leaf: 'Leaf',
-      freehand: 'Freehand',
+      spiderweb: 'Spider web',
+      freehand: 'Pen',
     },
     toolInstructions: {
       select: 'Tap an object to move it.',
@@ -238,14 +245,17 @@ export const translations: Record<Language, AppStrings> = {
       gingerbread: 'Drag on the paper to draw a gingerbread cookie.',
       flower: 'Drag on the paper to draw a flower.',
       leaf: 'Drag on the paper to draw a leaf.',
-      freehand: 'Drag on the paper to draw freehand.',
+      spiderweb: 'Drag on the paper to draw a spider web.',
+      freehand: 'Drag on the paper to draw with the pen.',
     },
     languageLabel: 'Language',
     languageAriaLabel: 'Choose language',
     languageNames: { sv: 'Svenska', en: 'English', de: 'Deutsch' },
     toolsAriaLabel: 'Drawing tools',
-    figures: 'Shapes',
-    additionalFigures: 'More shapes',
+    basicShapes: 'Shapes',
+    additionalBasicShapes: 'Basic shapes',
+    figures: 'Figures',
+    additionalFigures: 'More figures',
     moreOptions: 'More options',
     deleteSelected: 'Delete selected',
     restart: 'Start over',
@@ -339,7 +349,8 @@ export const translations: Record<Language, AppStrings> = {
       gingerbread: 'Lebkuchen',
       flower: 'Blume',
       leaf: 'Blatt',
-      freehand: 'Freihand',
+      spiderweb: 'Spinnennetz',
+      freehand: 'Stift',
     },
     toolInstructions: {
       select: 'Tippe auf ein Objekt, um es zu bewegen.',
@@ -357,12 +368,15 @@ export const translations: Record<Language, AppStrings> = {
       gingerbread: 'Ziehe über das Papier, um einen Lebkuchen zu malen.',
       flower: 'Ziehe über das Papier, um eine Blume zu malen.',
       leaf: 'Ziehe über das Papier, um ein Blatt zu malen.',
-      freehand: 'Ziehe über das Papier, um freihändig zu malen.',
+      spiderweb: 'Ziehe über das Papier, um ein Spinnennetz zu malen.',
+      freehand: 'Ziehe über das Papier, um mit dem Stift zu malen.',
     },
     languageLabel: 'Sprache',
     languageAriaLabel: 'Sprache auswählen',
     languageNames: { sv: 'Svenska', en: 'English', de: 'Deutsch' },
     toolsAriaLabel: 'Malwerkzeuge',
+    basicShapes: 'Formen',
+    additionalBasicShapes: 'Grundformen',
     figures: 'Figuren',
     additionalFigures: 'Weitere Figuren',
     moreOptions: 'Mehr Optionen',
