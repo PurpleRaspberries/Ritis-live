@@ -42,3 +42,9 @@ npm run dev
 - `npm run build` – typkontrollerar och bygger appen för produktion.
 - `npm run lint` – kontrollerar koden med Oxlint.
 - `npm run preview` – visar den färdigbyggda appen lokalt.
+
+## Publicera på GitHub Pages
+
+Projektet byggs och publiceras automatiskt till GitHub Pages när ändringar skickas till `main`. Arbetsflödet finns i `.github/workflows/deploy-pages.yml`.
+
+Aktivera GitHub Pages för repot under **Settings → Pages** och välj **GitHub Actions** som källa. När arbetsflödet har körts finns appen på https://purpleraspberries.github.io/Ritis/.
