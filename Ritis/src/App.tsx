@@ -1,19 +1,18 @@
 // Samlar ritprogrammets tillstånd och kopplar ihop verktygsfält, canvas och egenskapspanel.
-// Hanterar även filåtgärder och skickar händelser vidare till komponenter och hjälpfunktioner.
+// Hanterar filåtgärder och synkroniserar ritningens namn med webbläsarfliken.
 import { useEffect, useRef, useState } from 'react';
-import type { Layer, Shape, Tool } from './types';
+import type { DrawingFileFormat, Layer, Shape, TextFontFamily, Tool } from './types';
 import { isLanguage, translations, type Language } from './i18n';
 import { Toolbar } from './components/Toolbar';
 import { RestartConfirmationDialog } from './components/RestartConfirmationDialog';
+import { SaveFormatDialog } from './components/SaveFormatDialog';
 import { Canvas } from './components/Canvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { usePointerEvents } from './hooks/usePointerEvents';
 import {
-  saveDrawingToFile,
+  saveDrawingAsFormat,
+  saveDrawingWithFilePicker,
   loadDrawingFromFile,
-  exportDrawingToJpeg,
-  exportDrawingToPng,
-  exportDrawingToSvg,
 } from './utils/storage';
 
 export default function App() {
@@ -25,7 +24,8 @@ export default function App() {
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
-  const [fileName, setFileName] = useState('min-ritning');
+  const [saveFormatDialogOpen, setSaveFormatDialogOpen] = useState(false);
+  const [fileName, setFileName] = useState('');
   const [activeLayer, setActiveLayer] = useState<Layer>(1);
   const [language, setLanguage] = useState<Language>(() => {
     const savedLanguage = window.localStorage.getItem('ritis-language');
@@ -34,11 +34,13 @@ export default function App() {
   const canvasRef = useRef<SVGSVGElement>(null);
   const t = translations[language];
 
+  // Sparar språkvalet och visar alltid appnamnet samt ritningens namn utan filändelse.
   useEffect(() => {
     window.localStorage.setItem('ritis-language', language);
     document.documentElement.lang = language;
-    document.title = t.appTitle;
-  }, [language, t.appTitle]);
+    const drawingName = (fileName || t.newFileName).replace(/\.[^.]+$/, '');
+    document.title = `${t.appTitle} - ${drawingName}`;
+  }, [language, fileName, t.appTitle, t.newFileName]);
 
   const handleToolChange = (newTool: Tool) => {
     setTool(newTool);
@@ -79,6 +81,16 @@ export default function App() {
     }
   };
 
+  const handlePenWidthChange = (width: number) => {
+    setPenWidth(width);
+    if (!selectedId) return;
+    setShapes((prev) => prev.map((shape) => (
+      shape.id === selectedId && (shape.type === 'freehand' || shape.type === 'line')
+        ? { ...shape, strokeWidth: width }
+        : shape
+    )));
+  };
+
   const deleteSelected = () => {
     if (!selectedId) return;
     setShapes((prev) => prev.filter((s) => s.id !== selectedId));
@@ -91,13 +103,14 @@ export default function App() {
     setRestartDialogOpen(false);
   };
 
+  // En öppnad ritning uppdaterar former, bakgrund och filnamn tillsammans.
   const handleOpenFile = (file: File) => {
     loadDrawingFromFile(file, (loadedShapes, loadedBackgroundColor) => {
       setShapes(loadedShapes);
       setSelectedId(null);
       setBackgroundTransparent(loadedBackgroundColor === null);
       if (loadedBackgroundColor !== null) setBackgroundColor(loadedBackgroundColor);
-      setFileName(file.name.replace(/\.json$/i, '') || 'min-ritning');
+      setFileName(file.name);
     }, language);
   };
 
@@ -123,6 +136,7 @@ export default function App() {
         return axis === 'x' ? { ...shape, cx: value } : { ...shape, cy: value };
       }
       if (shape.type === 'line') {
+        // Linjens andra ändpunkt flyttas lika mycket så att riktning och längd bevaras.
         return axis === 'x'
           ? { ...shape, x2: value + shape.x2 - shape.x1, x1: value }
           : { ...shape, y2: value + shape.y2 - shape.y1, y1: value };
@@ -145,6 +159,7 @@ export default function App() {
       }
 
       if (shape.type === 'circle') {
+        // Cirklar sparas som ellipser när bredd och höjd ändras var för sig.
         const rx = shape.rx ?? shape.r;
         const ry = shape.ry ?? shape.r;
         const newRx = dimension === 'width' ? safeValue / 2 : rx;
@@ -174,42 +189,63 @@ export default function App() {
     )));
   };
 
-  const handleSaveDrawing = async () => {
-    try {
-      await saveDrawingToFile(
-        shapes,
-        fileName,
-        language,
-        backgroundTransparent ? null : backgroundColor,
-      );
-    } catch (error) {
-      console.error(t.saveFailed, error);
-      window.alert(t.saveFailed);
-    }
+  const handleTextFontChange = (fontFamily: TextFontFamily) => {
+    if (!selectedId) return;
+    setShapes((prev) => prev.map((shape) => (
+      shape.id === selectedId && shape.type === 'text'
+        ? { ...shape, fontFamily }
+        : shape
+    )));
   };
 
-  const handleExport = async (exportDrawing: typeof exportDrawingToJpeg) => {
+  // Samlar sparning och export; webbläsarens filväljare avgör format när den finns.
+  const handleSaveExport = async () => {
     if (!canvasRef.current) {
       window.alert(t.missingCanvasForExport);
       return;
     }
 
     try {
-      await exportDrawing(
+      const result = await saveDrawingWithFilePicker(
+        shapes,
         canvasRef.current,
-        fileName,
+        fileName || t.newFileName,
         language,
         backgroundTransparent ? null : backgroundColor,
       );
+      if (result.status === 'unsupported') setSaveFormatDialogOpen(true);
+      else if (result.status === 'saved') setFileName(result.fileName);
     } catch (error) {
-      console.error(t.exportFailed, error);
-      window.alert(t.exportFailed);
+      console.error(t.saveFailed, error);
+      window.alert(t.saveFailed);
     }
   };
 
-  const handleExportJpeg = () => handleExport(exportDrawingToJpeg);
-  const handleExportPng = () => handleExport(exportDrawingToPng);
-  const handleExportSvg = () => handleExport(exportDrawingToSvg);
+  const handleSaveFormat = async (format: DrawingFileFormat, chosenFileName: string) => {
+    setSaveFormatDialogOpen(false);
+    if (!canvasRef.current) {
+      window.alert(t.missingCanvasForExport);
+      return;
+    }
+
+    const baseName = chosenFileName.trim().replace(/\.(json|jpe?g|png|svg)$/i, '') || t.newFileName;
+    const extension = format === 'jpeg' ? 'jpg' : format;
+    try {
+      const saved = await saveDrawingAsFormat(
+        format,
+        shapes,
+        canvasRef.current,
+        baseName,
+        language,
+        backgroundTransparent ? null : backgroundColor,
+      );
+      if (saved) setFileName(`${baseName}.${extension}`);
+    } catch (error) {
+      const errorMessage = format === 'json' ? t.saveFailed : t.exportFailed;
+      console.error(errorMessage, error);
+      window.alert(errorMessage);
+    }
+  };
 
   // Förhandsgranskningen inkluderar den pågående formen; lager sorteras före ritning.
   const allShapes = (draftShape ? [...shapes, draftShape] : [...shapes])
@@ -220,18 +256,11 @@ export default function App() {
       <Toolbar
         tool={tool}
         setTool={handleToolChange}
-        color={color}
-        onColorChange={handleColorChange}
         hasSelection={Boolean(selectedId)}
         onDeleteSelected={deleteSelected}
         onRestartRequest={() => setRestartDialogOpen(true)}
-        onSave={handleSaveDrawing}
-        onExportJpeg={handleExportJpeg}
-        onExportPng={handleExportPng}
-        onExportSvg={handleExportSvg}
+        onSaveExport={handleSaveExport}
         onOpenFile={handleOpenFile}
-        fileName={fileName}
-        onFileNameChange={setFileName}
         activeLayer={activeLayer}
         onLayerChange={handleLayerChange}
         language={language}
@@ -265,7 +294,7 @@ export default function App() {
           tool={tool}
           penWidth={penWidth}
           penColor={color}
-          onPenWidthChange={setPenWidth}
+          onPenWidthChange={handlePenWidthChange}
           selectedShape={shapes.find((shape) => shape.id === selectedId) ?? null}
           onPositionChange={handlePositionChange}
           onSizeChange={handleSizeChange}
@@ -273,6 +302,7 @@ export default function App() {
             if (selectedId) handleTextChange(selectedId, text);
           }}
           onTextSizeChange={handleTextSizeChange}
+          onTextFontChange={handleTextFontChange}
           onLayerChange={handleLayerChange}
           onColorChange={handleColorChange}
         />
@@ -282,6 +312,14 @@ export default function App() {
           language={language}
           onConfirm={handleConfirmRestart}
           onCancel={() => setRestartDialogOpen(false)}
+        />
+      )}
+      {saveFormatDialogOpen && (
+        <SaveFormatDialog
+          language={language}
+          fileName={fileName || t.newFileName}
+          onSelect={handleSaveFormat}
+          onCancel={() => setSaveFormatDialogOpen(false)}
         />
       )}
     </div>

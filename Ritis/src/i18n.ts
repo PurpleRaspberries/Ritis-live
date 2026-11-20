@@ -1,3 +1,5 @@
+// Samlar användartexter för svenska, engelska och tyska.
+// Appens komponenter hämtar sina etiketter och felmeddelanden från dessa språksträngar.
 import type { Tool } from './types';
 
 export type Language = 'sv' | 'en' | 'de';
@@ -35,12 +37,17 @@ export interface AppStrings {
   aboutTitle: string;
   aboutDescription: string;
   closeAbout: string;
+  newFileName: string;
   save: string;
+  saveOrExport: string;
+  saveFormatTitle: string;
+  cancelSave: string;
   saveAsJpeg: string;
   saveAsPng: string;
   saveAsSvg: string;
   openDrawing: string;
   saveFailed: string;
+  unsupportedSaveFormat: string;
   jsonFileType: string;
   jpegFileType: string;
   pngFileType: string;
@@ -56,9 +63,12 @@ export interface AppStrings {
   yPosition: string;
   text: string;
   textSize: string;
+  fontFamily: string;
   width: string;
   height: string;
   penThickness: string;
+  lineStartPoint: string;
+  lineEndPoint: string;
   doubleClickToEditText: string;
   editTextOnCanvas: string;
   invalidDrawing: string;
@@ -76,7 +86,7 @@ export const translations: Record<Language, AppStrings> = {
   sv: {
     appTitle: 'Ritis',
     toolLabels: {
-      select: 'Flytta',
+      select: 'Flytta/markera',
       rect: 'Ruta',
       circle: 'Cirkel',
       line: 'Linje',
@@ -139,12 +149,17 @@ export const translations: Record<Language, AppStrings> = {
     aboutTitle: 'Om Ritis',
     aboutDescription: 'Ritis är en enkel ritapp för barn. Rita med färger och figurer, lägg till text, flytta objekt och spara eller exportera dina bilder.',
     closeAbout: 'Stäng',
+    newFileName: 'Ny',
     save: 'Spara ritning',
+    saveOrExport: 'Spara / exportera',
+    saveFormatTitle: 'Välj filformat',
+    cancelSave: 'Avbryt',
     saveAsJpeg: 'Exportera JPEG',
     saveAsPng: 'Exportera PNG',
     saveAsSvg: 'Exportera SVG',
     openDrawing: 'Öppna ritning',
     saveFailed: 'Kunde inte spara filen.',
+    unsupportedSaveFormat: 'Välj ett av de tillgängliga filformaten.',
     jsonFileType: 'JSON-ritning',
     jpegFileType: 'JPEG-bild',
     pngFileType: 'PNG-bild',
@@ -169,9 +184,12 @@ export const translations: Record<Language, AppStrings> = {
     yPosition: 'Placering Y',
     text: 'Text',
     textSize: 'Textstorlek',
+    fontFamily: 'Typsnitt',
     width: 'Bredd',
     height: 'Höjd',
     penThickness: 'Pennans tjocklek',
+    lineStartPoint: 'Linjens startpunkt',
+    lineEndPoint: 'Linjens slutpunkt',
     doubleClickToEditText: 'Dubbelklicka för att redigera texten',
     editTextOnCanvas: 'Redigera text på canvasen',
     invalidDrawing: 'Filen verkar inte vara en giltig ritning.',
@@ -187,7 +205,7 @@ export const translations: Record<Language, AppStrings> = {
   en: {
     appTitle: 'Ritis',
     toolLabels: {
-      select: 'Move',
+      select: 'Move/Select',
       rect: 'Rectangle',
       circle: 'Circle',
       line: 'Line',
@@ -250,12 +268,17 @@ export const translations: Record<Language, AppStrings> = {
     aboutTitle: 'About Ritis',
     aboutDescription: 'Ritis is a simple drawing app for children. Draw with colors and shapes, add text, move objects, and save or export your pictures.',
     closeAbout: 'Close',
+    newFileName: 'New',
     save: 'Save drawing',
+    saveOrExport: 'Save / export',
+    saveFormatTitle: 'Choose file format',
+    cancelSave: 'Cancel',
     saveAsJpeg: 'Export JPEG',
     saveAsPng: 'Export PNG',
     saveAsSvg: 'Export SVG',
     openDrawing: 'Open drawing',
     saveFailed: 'Could not save the file.',
+    unsupportedSaveFormat: 'Choose one of the available file formats.',
     jsonFileType: 'JSON drawing',
     jpegFileType: 'JPEG image',
     pngFileType: 'PNG image',
@@ -280,9 +303,12 @@ export const translations: Record<Language, AppStrings> = {
     yPosition: 'Y position',
     text: 'Text',
     textSize: 'Text size',
+    fontFamily: 'Font',
     width: 'Width',
     height: 'Height',
     penThickness: 'Pen thickness',
+    lineStartPoint: 'Line start point',
+    lineEndPoint: 'Line end point',
     doubleClickToEditText: 'Double-click to edit the text',
     editTextOnCanvas: 'Edit text on the canvas',
     invalidDrawing: 'This does not seem to be a valid drawing.',
@@ -298,7 +324,7 @@ export const translations: Record<Language, AppStrings> = {
   de: {
     appTitle: 'Ritis',
     toolLabels: {
-      select: 'Bewegen',
+      select: 'Verschieben/Markieren',
       rect: 'Rechteck',
       circle: 'Kreis',
       line: 'Linie',
@@ -361,12 +387,17 @@ export const translations: Record<Language, AppStrings> = {
     aboutTitle: 'Über Ritis',
     aboutDescription: 'Ritis ist eine einfache Mal-App für Kinder. Male mit Farben und Formen, füge Text hinzu, bewege Objekte und speichere oder exportiere deine Bilder.',
     closeAbout: 'Schließen',
+    newFileName: 'Neu',
     save: 'Zeichnung speichern',
+    saveOrExport: 'Speichern / exportieren',
+    saveFormatTitle: 'Dateiformat auswählen',
+    cancelSave: 'Abbrechen',
     saveAsJpeg: 'JPEG exportieren',
     saveAsPng: 'PNG exportieren',
     saveAsSvg: 'SVG exportieren',
     openDrawing: 'Zeichnung öffnen',
     saveFailed: 'Datei konnte nicht gespeichert werden.',
+    unsupportedSaveFormat: 'Wähle eines der verfügbaren Dateiformate aus.',
     jsonFileType: 'JSON-Zeichnung',
     jpegFileType: 'JPEG-Bild',
     pngFileType: 'PNG-Bild',
@@ -391,9 +422,12 @@ export const translations: Record<Language, AppStrings> = {
     yPosition: 'Position Y',
     text: 'Text',
     textSize: 'Textgröße',
+    fontFamily: 'Schriftart',
     width: 'Breite',
     height: 'Höhe',
     penThickness: 'Stiftdicke',
+    lineStartPoint: 'Linienanfang',
+    lineEndPoint: 'Linienende',
     doubleClickToEditText: 'Doppelklicken, um den Text zu bearbeiten',
     editTextOnCanvas: 'Text auf der Zeichenfläche bearbeiten',
     invalidDrawing: 'Diese Datei scheint keine gültige Zeichnung zu sein.',

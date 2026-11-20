@@ -1,6 +1,6 @@
 // Visar och redigerar egenskaper för det objekt som är markerat på canvasen.
 // Tar emot objekt och ändringsfunktioner från App och använder färgväljaren.
-import type { Layer, Shape, Tool } from '../types';
+import { textFontFamilies, type Layer, type Shape, type TextFontFamily, type Tool } from '../types';
 import { translations, type Language } from '../i18n';
 import { ColorPicker } from './ColorPicker';
 
@@ -15,6 +15,7 @@ interface PropertiesPanelProps {
   onSizeChange: (dimension: 'width' | 'height', value: number) => void;
   onTextChange: (text: string) => void;
   onTextSizeChange: (fontSize: number) => void;
+  onTextFontChange: (fontFamily: TextFontFamily) => void;
   onLayerChange: (layer: Layer) => void;
   onColorChange: (color: string) => void;
 }
@@ -30,11 +31,22 @@ export function PropertiesPanel({
   onSizeChange,
   onTextChange,
   onTextSizeChange,
+  onTextFontChange,
   onLayerChange,
   onColorChange,
 }: PropertiesPanelProps) {
   const t = translations[language];
-  const showsPenWidth = tool === 'freehand' || tool === 'line';
+  // Ett markerat streck visar sina egna värden; annars visas inställningarna för nästa streck.
+  const selectedStrokeWidth = selectedShape?.type === 'line'
+    ? selectedShape.strokeWidth ?? 4
+    : selectedShape?.type === 'freehand'
+      ? selectedShape.strokeWidth
+      : null;
+  const showsPenWidth = tool === 'freehand' || tool === 'line' || selectedStrokeWidth !== null;
+  const displayedPenWidth = selectedStrokeWidth ?? penWidth;
+  const displayedPenColor = selectedShape && selectedShape.type !== 'rainbow'
+    ? selectedShape.color
+    : penColor;
   const getPositionValue = (axis: 'x' | 'y') => {
     if (!selectedShape) return 0;
     if (selectedShape.type === 'circle') {
@@ -76,6 +88,9 @@ export function PropertiesPanel({
         minHeight: 0,
       }}
     >
+      <div className="properties-color-setting">
+        <ColorPicker color={displayedPenColor} onColorChange={onColorChange} language={language} />
+      </div>
       {showsPenWidth && (
         <div className="pen-width-setting" style={{ margin: '16px 16px 0' }}>
           <label htmlFor="pen-width-slider">{t.penThickness}</label>
@@ -87,7 +102,7 @@ export function PropertiesPanel({
               min={4}
               max={32}
               step={2}
-              value={penWidth}
+              value={displayedPenWidth}
               aria-label={t.penThickness}
               onChange={(event) => onPenWidthChange(Number(event.target.value))}
             />
@@ -99,8 +114,8 @@ export function PropertiesPanel({
               y1="20"
               x2="86"
               y2="20"
-              stroke={penColor}
-              strokeWidth={penWidth}
+              stroke={displayedPenColor}
+              strokeWidth={displayedPenWidth}
               strokeLinecap="round"
             />
           </svg>
@@ -162,6 +177,22 @@ export function PropertiesPanel({
                     style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
                   />
                 </label>
+
+                <label style={{ display: 'block', marginBottom: '12px' }}>
+                  {t.fontFamily}
+                  <select
+                    value={selectedShape.fontFamily ?? 'Arial, sans-serif'}
+                    onChange={(event) => {
+                      const selectedFont = textFontFamilies.find(({ value }) => value === event.target.value);
+                      if (selectedFont) onTextFontChange(selectedFont.value);
+                    }}
+                    style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+                  >
+                    {textFontFamilies.map(({ value, label }) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </label>
               </>
             ) : (
               <>
@@ -201,12 +232,6 @@ export function PropertiesPanel({
                 ))}
               </select>
             </label>
-
-            {selectedShape.type !== 'rainbow' && (
-              <>
-                <ColorPicker color={selectedShape.color} onColorChange={onColorChange} language={language} />
-              </>
-            )}
           </>
         )}
       </aside>

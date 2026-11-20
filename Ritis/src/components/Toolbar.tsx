@@ -1,27 +1,19 @@
-// Visar ritverktyg, figurmeny och inställningar för färg och canvasbakgrund.
+// Visar ritverktyg, figurmeny och inställningar för canvasbakgrunden.
 // Skickar användarens val samt filåtgärder vidare till App.
 import { useEffect, useRef, useState } from 'react';
 import type { Layer, Tool } from '../types';
 import { isLanguage, translations, type Language } from '../i18n';
-import { ColorPicker } from './ColorPicker';
 import { BackgroundSettingsDialog } from './BackgroundSettingsDialog';
 import { AboutDialog } from './AboutDialog';
 
 interface ToolbarProps {
   tool: Tool;
   setTool: (tool: Tool) => void;
-  color: string;
-  onColorChange: (color: string) => void;
   hasSelection: boolean;
   onDeleteSelected: () => void;
   onRestartRequest: () => void;
-  onSave: () => void;
-  onExportJpeg: () => void;
-  onExportPng: () => void;
-  onExportSvg: () => void;
+  onSaveExport: () => void;
   onOpenFile: (file: File) => void;
-  fileName: string;
-  onFileNameChange: (fileName: string) => void;
   activeLayer: Layer;
   onLayerChange: (layer: Layer) => void;
   language: Language;
@@ -33,8 +25,8 @@ interface ToolbarProps {
 }
 
 const tools: Array<{ tool: Tool; icon: string }> = [
-  { tool: 'freehand', icon: '✏️' },
   { tool: 'select', icon: '👆' },
+  { tool: 'freehand', icon: '✏️' },
   { tool: 'rect', icon: '🟦' },
   { tool: 'circle', icon: '🔵' },
   { tool: 'line', icon: '〰️' },
@@ -59,18 +51,11 @@ const languages: Language[] = ['sv', 'en', 'de'];
 export function Toolbar({
   tool,
   setTool,
-  color,
-  onColorChange,
   hasSelection,
   onDeleteSelected,
   onRestartRequest,
-  onSave,
-  onExportJpeg,
-  onExportPng,
-  onExportSvg,
+  onSaveExport,
   onOpenFile,
-  fileName,
-  onFileNameChange,
   activeLayer,
   onLayerChange,
   language,
@@ -87,6 +72,7 @@ export function Toolbar({
   const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
 
+  // Stäng öppna menyer när klicket sker utanför dem, men låt menyinnehållet vara interaktivt.
   useEffect(() => {
     const closeMenusOnOutsideClick = (event: PointerEvent) => {
       const target = event.target;
@@ -127,9 +113,6 @@ export function Toolbar({
         <div className="toolbar-heading">
           <h1 className="toolbar-title">{t.appTitle}</h1>
           <p className="toolbar-instruction" aria-live="polite">{t.toolInstructions[tool]}</p>
-        </div>
-        <div className="toolbar-color">
-          <ColorPicker color={color} onColorChange={onColorChange} popup language={language} />
         </div>
         <div className="toolbar-tools" role="group" aria-label={t.toolsAriaLabel}>
           {tools.map(({ tool: toolName, icon }) => (
@@ -219,16 +202,6 @@ export function Toolbar({
             </select>
           </label>
 
-          <label className="toolbar-setting">
-            {t.imageName}
-            <input
-              type="text"
-              value={fileName}
-              onChange={(e) => onFileNameChange(e.target.value)}
-              aria-label={t.imageName}
-            />
-          </label>
-
           <button
             type="button"
             className="toolbar-background-open"
@@ -243,10 +216,7 @@ export function Toolbar({
           </button>
 
           <div className="toolbar-actions">
-            <button type="button" onClick={() => handleMoreMenuAction(onSave)}>💾 {t.save}</button>
-            <button type="button" onClick={() => handleMoreMenuAction(onExportJpeg)}>🖼️ {t.saveAsJpeg}</button>
-            <button type="button" onClick={() => handleMoreMenuAction(onExportPng)}>🖼️ {t.saveAsPng}</button>
-            <button type="button" onClick={() => handleMoreMenuAction(onExportSvg)}>📐 {t.saveAsSvg}</button>
+            <button type="button" onClick={() => handleMoreMenuAction(onSaveExport)}>💾 {t.saveOrExport}</button>
             <button type="button" onClick={() => handleMoreMenuAction(() => fileInputRef.current?.click())}>📂 {t.openDrawing}</button>
             <button type="button" onClick={() => handleMoreMenuAction(() => setAboutDialogOpen(true))}>ℹ️ {t.about}</button>
           </div>

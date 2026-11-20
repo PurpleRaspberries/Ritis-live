@@ -14,7 +14,7 @@ interface CanvasProps {
   onTextChange: (id: string, text: string) => void;
   onCanvasPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
   onShapePointerDown: (e: React.PointerEvent<SVGElement>, id: string) => void;
-  onResizePointerDown: (e: React.PointerEvent<SVGRectElement>, id: string, handle: ResizeHandle) => void;
+  onResizePointerDown: (e: React.PointerEvent<SVGElement>, id: string, handle: ResizeHandle) => void;
   onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
   onPointerUp: () => void;
   onPointerLeave: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -120,6 +120,7 @@ function createFreehandPath(points: Array<{ x: number; y: number }>): string {
     return `M ${point.x} ${point.y} l 0.001 0`;
   }
 
+  // Kvadratiska Bézierkurvor till mittpunkter jämnar ut hörn utan att tappa ritpunkter.
   let path = `M ${points[0].x} ${points[0].y}`;
   for (let index = 1; index < points.length; index += 1) {
     const point = points[index];
@@ -284,7 +285,7 @@ function ResizeHandles({
   right: number;
   bottom: number;
   showSideHandles: boolean;
-  onResizePointerDown: (e: React.PointerEvent<SVGRectElement>, id: string, handle: ResizeHandle) => void;
+  onResizePointerDown: (e: React.PointerEvent<SVGElement>, id: string, handle: ResizeHandle) => void;
 }) {
   const size = 10;
   const handles: Array<{ handle: ResizeHandle; x: number; y: number; cursor: string }> = [
@@ -343,6 +344,7 @@ export function Canvas({
   const shapesRef = React.useRef(shapes);
   shapesRef.current = shapes;
 
+  // En nyskapad tom textruta går direkt till redigering; befintlig text lämnas orörd vid andra markeringar.
   React.useEffect(() => {
     if (tool !== 'select') {
       setEditingTextId(null);
@@ -451,6 +453,34 @@ export function Canvas({
                   data-export-ignore="true"
                 />
               )}
+              {isSelected && tool === 'select' && (
+                <>
+                  <circle
+                    cx={shape.x1}
+                    cy={shape.y1}
+                    r={10}
+                    fill="#ffffff"
+                    stroke="#7c3aed"
+                    strokeWidth={3}
+                    style={{ cursor: 'grab', touchAction: 'none' }}
+                    aria-label={t.lineStartPoint}
+                    data-export-ignore="true"
+                    onPointerDown={(e) => onResizePointerDown(e, shape.id, 'line-start')}
+                  />
+                  <circle
+                    cx={shape.x2}
+                    cy={shape.y2}
+                    r={10}
+                    fill="#ffffff"
+                    stroke="#7c3aed"
+                    strokeWidth={3}
+                    style={{ cursor: 'grab', touchAction: 'none' }}
+                    aria-label={t.lineEndPoint}
+                    data-export-ignore="true"
+                    onPointerDown={(e) => onResizePointerDown(e, shape.id, 'line-end')}
+                  />
+                </>
+              )}
             </g>
           );
         }
@@ -511,7 +541,7 @@ export function Canvas({
                       color: shape.color,
                       caretColor: shape.color,
                       fontSize: `${shape.fontSize}px`,
-                      fontFamily: 'sans-serif',
+                      fontFamily: shape.fontFamily ?? 'Arial, sans-serif',
                       lineHeight: `${shape.fontSize}px`,
                     }}
                   />
@@ -523,6 +553,7 @@ export function Canvas({
                   y={shape.y + shape.fontSize}
                   fill={shape.color}
                   fontSize={shape.fontSize}
+                  fontFamily={shape.fontFamily ?? 'Arial, sans-serif'}
                   style={{ pointerEvents: 'none' }}
                 >
                   {shape.text}

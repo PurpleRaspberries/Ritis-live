@@ -40,6 +40,7 @@ export function usePointerEvents({
   const [isDragging, setIsDragging] = useState(false);
   const [resizeHandle, setResizeHandle] = useState<ResizeHandle | null>(null);
 
+  // Startar ny text direkt eller påbörjar ett ritobjekt som färdigställs när pekaren släpps.
   const handleCanvasPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     const pos = getSvgCoords(e);
     setStartPos(pos);
@@ -54,7 +55,17 @@ export function usePointerEvents({
     if (tool === 'text') {
       setShapes((prev) => [
         ...prev,
-        { id, type: 'text', x: pos.x, y: pos.y, text: '', fontSize: 32, color, layer: activeLayer },
+        {
+          id,
+          type: 'text',
+          x: pos.x,
+          y: pos.y,
+          text: '',
+          fontSize: 32,
+          fontFamily: 'Arial, sans-serif',
+          color,
+          layer: activeLayer,
+        },
       ]);
       setSelectedId(id);
       setTool('select');
@@ -137,12 +148,13 @@ export function usePointerEvents({
   };
 
   const handleResizePointerDown = (
-    e: React.PointerEvent<SVGRectElement>,
+    e: React.PointerEvent<SVGElement>,
     id: string,
     handle: ResizeHandle,
   ) => {
     if (tool !== 'select') return;
     e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
 
     const svg = e.currentTarget.ownerSVGElement;
     if (!svg) return;
@@ -208,7 +220,11 @@ export function usePointerEvents({
             return { ...shape, x: left, y: top, width: right - left, height: bottom - top };
           }
 
-          if (shape.type === 'line') return shape;
+          if (shape.type === 'line') {
+            if (resizeHandle === 'line-start') return { ...shape, x1: pos.x, y1: pos.y };
+            if (resizeHandle === 'line-end') return { ...shape, x2: pos.x, y2: pos.y };
+            return shape;
+          }
           if (shape.type === 'text') return shape;
 
           const rx = shape.rx ?? shape.r;
@@ -244,8 +260,10 @@ export function usePointerEvents({
       return;
     }
 
+    // Uppdaterar förhandsvisningen medan ett nytt objekt ritas.
     if (!draftShape) return;
     if (draftShape.type === 'freehand') {
+      // Frihandspunkterna normaliseras mot objektets ruta så att strecket kan flyttas och storleksändras.
       const points = draftShape.points.map((point) => ({
         x: draftShape.x + point.x * draftShape.width,
         y: draftShape.y + point.y * draftShape.height,
@@ -290,6 +308,7 @@ export function usePointerEvents({
   };
 
   const handlePointerUp = () => {
+    // Lägg till hela det sammanhängande draget som ett objekt i ritningens tillstånd.
     if (draftShape) {
       setShapes((prev) => [...prev, draftShape]);
       setDraftShape(null);
