@@ -1,15 +1,21 @@
 // Ritar canvasens bakgrund, former och redigeringshandtag i SVG.
 // Tar emot data och pekarhändelser från App och skickar textändringar tillbaka.
 import React from 'react';
-import type { ResizeHandle, Shape, Tool } from '../types';
+import type { ResizeHandle, Shape, ShapeColorPartKey, Tool } from '../types';
 import { translations, type Language } from '../i18n';
+import { getShapeColorParts, rainbowColorPartKeys, rainbowDefaultColors } from '../utils/shapeColors';
+import { getShapeRotationCenter } from '../utils/geometry';
 
 interface CanvasProps {
   shapes: Shape[];
   selectedId: string | null;
+  editingTextId: string | null;
+  setEditingTextId: (id: string | null) => void;
   tool: Tool;
   language: Language;
   backgroundColor: string;
+  gridEnabled: boolean;
+  gridSize: number;
   svgRef: React.Ref<SVGSVGElement>;
   onTextChange: (id: string, text: string) => void;
   onCanvasPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -159,7 +165,14 @@ function createUnicornPaths(
   w: number,
   h: number,
   bodyColor: string,
-): Array<{ fill: string; path: string; stroke?: string; strokeWidth?: number }> {
+): Array<{
+  fill: string;
+  path: string;
+  stroke?: string;
+  strokeWidth?: number;
+  fillPart?: ShapeColorPartKey;
+  strokePart?: ShapeColorPartKey;
+}> {
   const sx = w / 100;
   const sy = h / 100;
   const p = (px: number, py: number) => `${x + px * sx} ${y + py * sy}`;
@@ -167,6 +180,7 @@ function createUnicornPaths(
   return [
     {
       fill: '#ec4899',
+      fillPart: 'unicorn-pink',
       path: [
         `M ${p(19, 57)}`,
         `C ${p(9, 49)}, ${p(5, 58)}, ${p(14, 64)}`,
@@ -176,6 +190,7 @@ function createUnicornPaths(
     },
     {
       fill: bodyColor,
+      fillPart: 'unicorn-body',
       path: [
         `M ${p(17, 69)}`,
         `C ${p(15, 58)}, ${p(24, 52)}, ${p(38, 51)}`,
@@ -192,6 +207,7 @@ function createUnicornPaths(
     },
     {
       fill: '#a855f7',
+      fillPart: 'unicorn-mane',
       path: [
         `M ${p(55, 34)}`,
         `C ${p(47, 29)}, ${p(41, 36)}, ${p(46, 44)}`,
@@ -203,18 +219,22 @@ function createUnicornPaths(
     },
     {
       fill: '#facc15',
+      fillPart: 'unicorn-horn',
       path: `M ${p(71, 34)} L ${p(77, 5)} L ${p(83, 38)} Z`,
     },
     {
       fill: '#fbcfe8',
+      fillPart: 'unicorn-ear',
       path: `M ${p(60, 33)} L ${p(62, 17)} L ${p(72, 32)} Z`,
     },
     {
       fill: '#f9a8d4',
+      fillPart: 'unicorn-ear-detail',
       path: `M ${p(63, 30)} L ${p(63, 21)} L ${p(69, 31)} Z`,
     },
     {
       fill: '#ec4899',
+      fillPart: 'unicorn-pink',
       path: [
         `M ${p(51, 37)}`,
         `C ${p(46, 35)}, ${p(45, 40)}, ${p(50, 44)}`,
@@ -224,6 +244,7 @@ function createUnicornPaths(
     },
     {
       fill: '#22d3ee',
+      fillPart: 'unicorn-mane-highlight',
       path: [
         `M ${p(47, 51)}`,
         `C ${p(43, 48)}, ${p(42, 54)}, ${p(48, 58)}`,
@@ -233,6 +254,7 @@ function createUnicornPaths(
     },
     {
       fill: '#fbcfe8',
+      fillPart: 'unicorn-muzzle',
       path: [
         `M ${p(88, 48)}`,
         `C ${p(94, 47)}, ${p(97, 50)}, ${p(94, 53)}`,
@@ -242,23 +264,27 @@ function createUnicornPaths(
     {
       fill: 'none',
       stroke: '#7c2d12',
+      strokePart: 'unicorn-brown-details',
       strokeWidth: 2,
       path: `M ${p(88, 56)} C ${p(91, 59)}, ${p(95, 57)}, ${p(96, 55)}`,
     },
     {
       fill: 'none',
       stroke: '#ffffff',
+      strokePart: 'unicorn-white-details',
       strokeWidth: 2,
       path: `M ${p(74, 25)} L ${p(77, 29)} L ${p(79, 24)}`,
     },
     {
       fill: 'none',
       stroke: '#7c2d12',
+      strokePart: 'unicorn-brown-details',
       strokeWidth: 2,
       path: `M ${p(26, 83)} L ${p(34, 83)} M ${p(55, 83)} L ${p(63, 83)}`,
     },
     {
       fill: '#facc15',
+      fillPart: 'unicorn-star',
       path: `M ${p(42, 56)} L ${p(43, 59)} L ${p(46, 59)} L ${p(44, 61)} L ${p(45, 64)} L ${p(42, 62)} L ${p(40, 64)} L ${p(41, 61)} L ${p(39, 59)} L ${p(42, 59)} Z`,
     },
   ];
@@ -266,12 +292,11 @@ function createUnicornPaths(
 
 // Varje färgband är ett halvt ringsegment, där nästa radie blir mindre åt samma centrum.
 function createRainbowBands(x: number, y: number, width: number, height: number) {
-  const colors = ['#ef4444', '#f97316', '#facc15', '#22c55e', '#3b82f6', '#6366f1', '#a855f7'];
   const bandSize = Math.max(0.1, Math.min(width / 16, height / 8));
   const centerX = x + width / 2;
   const baseline = y + height;
 
-  return colors.map((color, index) => {
+  return rainbowDefaultColors.map((color, index) => {
     const outerRx = Math.max(0.1, width / 2 - index * bandSize);
     const outerRy = Math.max(0.1, height - index * bandSize);
     const innerRx = Math.max(0.1, outerRx - bandSize);
@@ -294,6 +319,7 @@ function ResizeHandles({
   right,
   bottom,
   showSideHandles,
+  rotationLabel,
   onResizePointerDown,
 }: {
   id: string;
@@ -302,6 +328,7 @@ function ResizeHandles({
   right: number;
   bottom: number;
   showSideHandles: boolean;
+  rotationLabel: string;
   onResizePointerDown: (e: React.PointerEvent<SVGElement>, id: string, handle: ResizeHandle) => void;
 }) {
   const size = 10;
@@ -337,16 +364,67 @@ function ResizeHandles({
           onPointerDown={(e) => onResizePointerDown(e, id, handle)}
         />
       ))}
+      <RotationHandle
+        id={id}
+        x={(left + right) / 2}
+        y={top}
+        label={rotationLabel}
+        onResizePointerDown={onResizePointerDown}
+      />
     </>
+  );
+}
+
+function RotationHandle({
+  id,
+  x,
+  y,
+  label,
+  onResizePointerDown,
+}: {
+  id: string;
+  x: number;
+  y: number;
+  label: string;
+  onResizePointerDown: (e: React.PointerEvent<SVGElement>, id: string, handle: ResizeHandle) => void;
+}) {
+  const handleY = Math.max(12, y - 28);
+  return (
+    <g data-export-ignore="true">
+      <line
+        x1={x}
+        y1={y}
+        x2={x}
+        y2={handleY}
+        stroke="#7c3aed"
+        strokeWidth={2}
+        pointerEvents="none"
+      />
+      <circle
+        cx={x}
+        cy={handleY}
+        r={8}
+        fill="#fff"
+        stroke="#7c3aed"
+        strokeWidth={3}
+        style={{ cursor: 'grab', touchAction: 'none' }}
+        aria-label={label}
+        onPointerDown={(event) => onResizePointerDown(event, id, 'rotate')}
+      />
+    </g>
   );
 }
 
 export function Canvas({
   shapes,
   selectedId,
+  editingTextId,
+  setEditingTextId,
   tool,
   language,
   backgroundColor,
+  gridEnabled,
+  gridSize,
   svgRef,
   onTextChange,
   onCanvasPointerDown,
@@ -357,69 +435,123 @@ export function Canvas({
   onPointerLeave,
 }: CanvasProps) {
   const t = translations[language];
-  const [editingTextId, setEditingTextId] = React.useState<string | null>(null);
-  const shapesRef = React.useRef(shapes);
-  shapesRef.current = shapes;
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = React.useState(100);
+  const [viewportSize, setViewportSize] = React.useState({ width: 0, height: 0 });
 
-  // En nyskapad tom textruta går direkt till redigering; befintlig text lämnas orörd vid andra markeringar.
   React.useEffect(() => {
-    if (tool !== 'select') {
-      setEditingTextId(null);
-      return;
-    }
+    const viewport = viewportRef.current;
+    if (!viewport) return;
 
-    if (!selectedId) {
-      setEditingTextId(null);
-      return;
-    }
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      setViewportSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+    });
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, []);
 
-    const selectedShape = shapesRef.current.find((shape) => shape.id === selectedId);
-    if (selectedShape?.type === 'text') {
-      if (selectedShape.text.length === 0) {
-        setEditingTextId(selectedShape.id);
-      }
-    } else {
-      setEditingTextId(null);
+  const handleCanvasPointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (tool === 'select') setEditingTextId(null);
+    onCanvasPointerDown(event);
+  };
+  const handleShapePointerDown = (event: React.PointerEvent<SVGElement>, id: string) => {
+    if (id !== selectedId) {
+      const shape = shapes.find((candidate) => candidate.id === id);
+      setEditingTextId(shape?.type === 'text' && shape.text.length === 0 ? id : null);
     }
-  }, [selectedId, tool]);
+    onShapePointerDown(event, id);
+  };
+  const zoomFactor = zoom / 100;
+  const viewWidth = viewportSize.width / zoomFactor;
+  const viewHeight = viewportSize.height / zoomFactor;
+  const viewBox = viewportSize.width > 0 && viewportSize.height > 0
+    ? `${(viewportSize.width - viewWidth) / 2} ${(viewportSize.height - viewHeight) / 2} ${viewWidth} ${viewHeight}`
+    : undefined;
 
   return (
-    <svg
-      ref={svgRef}
-      onPointerDown={onCanvasPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerLeave={onPointerLeave}
-      style={{
-        flex: 1,
-        background: backgroundColor,
-        cursor: tool === 'select' ? 'default' : 'crosshair',
-        touchAction: 'none',
-      }}
-    >
+    <div ref={viewportRef} className="canvas-viewport">
+      <svg
+        ref={svgRef}
+        viewBox={viewBox}
+        preserveAspectRatio="none"
+        onPointerDown={handleCanvasPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerLeave}
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          background: backgroundColor,
+          cursor: tool === 'select' ? 'default' : 'crosshair',
+          touchAction: 'none',
+        }}
+      >
+      {gridEnabled && (
+        <defs>
+          <pattern
+            id="ritis-grid"
+            width={gridSize}
+            height={gridSize}
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
+              fill="none"
+              stroke="#94a3b8"
+              strokeWidth="1"
+              opacity="0.42"
+            />
+          </pattern>
+        </defs>
+      )}
+      {gridEnabled && (
+        <rect
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          fill="url(#ritis-grid)"
+          pointerEvents="none"
+          data-export-ignore="true"
+        />
+      )}
       {shapes.map((shape) => {
         const isSelected = shape.id === selectedId;
+        const shapeOpacity = shape.opacity ?? 1;
+        const rotationCenter = getShapeRotationCenter(shape);
+        const rotationTransform = shape.rotation
+          ? `rotate(${shape.rotation} ${rotationCenter.x} ${rotationCenter.y})`
+          : undefined;
+        const colorParts = getShapeColorParts(shape);
+        const getPartColor = (key: ShapeColorPartKey) => colorParts.find((part) => part.key === key)?.color;
         const sharedProps = {
           fill: shape.type === 'rainbow' || shape.type === 'line' ? 'none' : shape.color,
           stroke: shape.type === 'line' ? shape.color : isSelected ? '#111827' : 'none',
+          fillOpacity: shapeOpacity,
+          strokeOpacity: shape.type === 'line' ? shapeOpacity : 1,
           strokeWidth: shape.type === 'line' ? shape.strokeWidth ?? 4 : isSelected ? 2 : 0,
           strokeDasharray: isSelected && shape.type !== 'line' ? '5,5' : undefined,
           style: { cursor: tool === 'select' ? 'move' : 'crosshair' },
-          onPointerDown: (e: React.PointerEvent<SVGElement>) => onShapePointerDown(e, shape.id),
+          onPointerDown: (e: React.PointerEvent<SVGElement>) => handleShapePointerDown(e, shape.id),
         };
 
         if (shape.type === 'freehand') {
           return (
             <g
               key={shape.id}
+              transform={rotationTransform}
               style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}
-              onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+              onPointerDown={(e) => handleShapePointerDown(e, shape.id)}
             >
               <path
                 d={createFreehandPath(shape.points)}
                 transform={`matrix(${shape.width} 0 0 ${shape.height} ${shape.x} ${shape.y})`}
                 fill="none"
                 stroke={shape.color}
+                opacity={shapeOpacity}
                 strokeWidth={shape.strokeWidth}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -441,6 +573,7 @@ export function Canvas({
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={shape.x}
                   top={shape.y}
                   right={shape.x + shape.width}
@@ -455,7 +588,7 @@ export function Canvas({
 
         if (shape.type === 'line') {
           return (
-            <g key={shape.id}>
+            <g key={shape.id} transform={rotationTransform}>
               <line x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} strokeLinecap="round" {...sharedProps} />
               {isSelected && (
                 <line
@@ -496,6 +629,13 @@ export function Canvas({
                     data-export-ignore="true"
                     onPointerDown={(e) => onResizePointerDown(e, shape.id, 'line-end')}
                   />
+                  <RotationHandle
+                    id={shape.id}
+                    x={(Math.min(shape.x1, shape.x2) + Math.max(shape.x1, shape.x2)) / 2}
+                    y={Math.min(shape.y1, shape.y2)}
+                    label={t.rotation}
+                    onResizePointerDown={onResizePointerDown}
+                  />
                 </>
               )}
             </g>
@@ -508,7 +648,7 @@ export function Canvas({
           const isEditing = isSelected && tool === 'select' && editingTextId === shape.id;
           const showTextSelection = isSelected && tool === 'select';
           return (
-            <g key={shape.id} style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
+            <g key={shape.id} transform={rotationTransform} style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}>
               <rect
                 x={shape.x}
                 y={shape.y}
@@ -519,7 +659,7 @@ export function Canvas({
                 strokeWidth={showTextSelection ? 1 : 0}
                 strokeDasharray={showTextSelection ? '5,5' : undefined}
                 aria-label={t.doubleClickToEditText}
-                onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+                onPointerDown={(e) => handleShapePointerDown(e, shape.id)}
                 onDoubleClick={(e) => {
                   if (tool !== 'select' || !isSelected) return;
                   e.stopPropagation();
@@ -557,6 +697,7 @@ export function Canvas({
                       background: 'white',
                       color: shape.color,
                       caretColor: shape.color,
+                      opacity: shapeOpacity,
                       fontSize: `${shape.fontSize}px`,
                       fontFamily: shape.fontFamily ?? 'Arial, sans-serif',
                       lineHeight: `${shape.fontSize}px`,
@@ -569,6 +710,8 @@ export function Canvas({
                   x={shape.x}
                   y={shape.y + shape.fontSize}
                   fill={shape.color}
+                  fillOpacity={shapeOpacity}
+                  opacity={shapeOpacity}
                   fontSize={shape.fontSize}
                   fontFamily={shape.fontFamily ?? 'Arial, sans-serif'}
                   style={{ pointerEvents: 'none' }}
@@ -576,17 +719,27 @@ export function Canvas({
                   {shape.text}
                 </text>
               )}
+              {isSelected && tool === 'select' && (
+                <RotationHandle
+                  id={shape.id}
+                  x={shape.x + textWidth / 2}
+                  y={shape.y}
+                  label={t.rotation}
+                  onResizePointerDown={onResizePointerDown}
+                />
+              )}
             </g>
           );
         }
 
         if (shape.type === 'rect') {
           return (
-            <g key={shape.id}>
+            <g key={shape.id} transform={rotationTransform}>
               <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} {...sharedProps} />
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={shape.x}
                   top={shape.y}
                   right={shape.x + shape.width}
@@ -608,11 +761,12 @@ export function Canvas({
           const right = shape.cx + rx;
           const bottom = shape.cy + ry;
           return (
-            <g key={shape.id}>
+            <g key={shape.id} transform={rotationTransform}>
               <ellipse cx={shape.cx} cy={shape.cy} rx={rx} ry={ry} {...sharedProps} />
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={left}
                   top={top}
                   right={right}
@@ -627,11 +781,12 @@ export function Canvas({
 
         if (shape.type === 'rabbit') {
           return (
-            <g key={shape.id}>
+            <g key={shape.id} transform={rotationTransform}>
               <path d={createRabbitPath(shape.x, shape.y, shape.width, shape.height)} {...sharedProps} />
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={shape.x}
                   top={shape.y}
                   right={shape.x + shape.width}
@@ -646,11 +801,12 @@ export function Canvas({
 
         if (shape.type === 'cloud') {
           return (
-            <g key={shape.id}>
+            <g key={shape.id} transform={rotationTransform}>
               <path d={createCloudPath(shape.x, shape.y, shape.width, shape.height)} {...sharedProps} />
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={shape.x}
                   top={shape.y}
                   right={shape.x + shape.width}
@@ -690,7 +846,7 @@ export function Canvas({
                       y1={centerY + Math.sin(angle) * rayStart}
                       x2={centerX + Math.cos(angle) * rayEnd}
                       y2={centerY + Math.sin(angle) * rayEnd}
-                      stroke={shape.color}
+                      stroke={getPartColor('sun-rays')}
                       strokeWidth={Math.max(2, size * 0.07)}
                       strokeLinecap="round"
                     />
@@ -700,7 +856,7 @@ export function Canvas({
                   cx={centerX}
                   cy={centerY}
                   r={radius}
-                  fill={shape.color}
+                  fill={getPartColor('sun-center')}
                 />
               </g>
             );
@@ -711,15 +867,15 @@ export function Canvas({
               <g>
                 <path
                   d={createGingerbreadPath(shape.x, shape.y, shape.width, shape.height)}
-                  fill={shape.color}
-                  stroke="#92400e"
+                  fill={getPartColor('gingerbread-body')}
+                  stroke={getPartColor('gingerbread-outline')}
                   strokeWidth={Math.max(1.5, size * 0.02)}
                   strokeLinejoin="round"
                 />
-                <circle cx={shape.x + shape.width * 0.42} cy={shape.y + shape.height * 0.23} r={Math.max(1.5, size * 0.025)} fill="#fff7ed" />
-                <circle cx={shape.x + shape.width * 0.58} cy={shape.y + shape.height * 0.23} r={Math.max(1.5, size * 0.025)} fill="#fff7ed" />
-                <circle cx={centerX} cy={shape.y + shape.height * 0.5} r={Math.max(2, size * 0.04)} fill="#ef4444" />
-                <circle cx={centerX} cy={shape.y + shape.height * 0.62} r={Math.max(2, size * 0.04)} fill="#22c55e" />
+                <circle cx={shape.x + shape.width * 0.42} cy={shape.y + shape.height * 0.23} r={Math.max(1.5, size * 0.025)} fill={getPartColor('gingerbread-eyes')} />
+                <circle cx={shape.x + shape.width * 0.58} cy={shape.y + shape.height * 0.23} r={Math.max(1.5, size * 0.025)} fill={getPartColor('gingerbread-eyes')} />
+                <circle cx={centerX} cy={shape.y + shape.height * 0.5} r={Math.max(2, size * 0.04)} fill={getPartColor('gingerbread-button-red')} />
+                <circle cx={centerX} cy={shape.y + shape.height * 0.62} r={Math.max(2, size * 0.04)} fill={getPartColor('gingerbread-button-green')} />
               </g>
             );
           } else if (shape.type === 'flower') {
@@ -734,7 +890,7 @@ export function Canvas({
                       cy={centerY + Math.sin(angle) * shape.height * 0.25}
                       rx={shape.width * 0.2}
                       ry={shape.height * 0.2}
-                      fill={shape.color}
+                      fill={getPartColor('flower-petals')}
                     />
                   );
                 })}
@@ -742,7 +898,7 @@ export function Canvas({
                   cx={centerX}
                   cy={centerY}
                   r={size * 0.16}
-                  fill="#facc15"
+                  fill={getPartColor('flower-center')}
                 />
               </g>
             );
@@ -751,8 +907,8 @@ export function Canvas({
               <g>
                 <path
                   d={createLeafPath(shape.x, shape.y, shape.width, shape.height)}
-                  fill={shape.color}
-                  stroke="#166534"
+                  fill={getPartColor('leaf-body')}
+                  stroke={getPartColor('leaf-outline')}
                   strokeWidth={Math.max(1.5, size * 0.02)}
                 />
                 <path
@@ -764,7 +920,7 @@ export function Canvas({
                     `M ${centerX} ${centerY - shape.height * 0.12} L ${shape.x + shape.width * 0.34} ${centerY - shape.height * 0.33}`,
                   ].join(' ')}
                   fill="none"
-                  stroke="#166534"
+                  stroke={getPartColor('leaf-veins')}
                   strokeWidth={Math.max(1, size * 0.015)}
                   pointerEvents="none"
                 />
@@ -775,10 +931,11 @@ export function Canvas({
           return (
             <g
               key={shape.id}
+              transform={rotationTransform}
               style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}
-              onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+              onPointerDown={(e) => handleShapePointerDown(e, shape.id)}
             >
-              {drawing}
+              <g opacity={shapeOpacity}>{drawing}</g>
               {isSelected && (
                 <rect
                   x={shape.x}
@@ -795,6 +952,7 @@ export function Canvas({
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={shape.x}
                   top={shape.y}
                   right={shape.x + shape.width}
@@ -813,8 +971,9 @@ export function Canvas({
           return (
             <g
               key={shape.id}
+              transform={rotationTransform}
               style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}
-              onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+              onPointerDown={(e) => handleShapePointerDown(e, shape.id)}
             >
               <rect
                 x={shape.x}
@@ -823,31 +982,31 @@ export function Canvas({
                 height={shape.height}
                 fill="transparent"
               />
-              {Array.from({ length: 6 }, (_, index) => {
-                const scale = (index + 1) / 6;
-                return (
-                  <ellipse
-                    key={`ring-${index}`}
-                    cx={centerX}
-                    cy={centerY}
-                    rx={shape.width * scale / 2}
-                    ry={shape.height * scale / 2}
-                    fill="none"
+              <g opacity={shapeOpacity} pointerEvents="none">
+                {Array.from({ length: 6 }, (_, index) => {
+                  const scale = (index + 1) / 6;
+                  return (
+                    <ellipse
+                      key={`ring-${index}`}
+                      cx={centerX}
+                      cy={centerY}
+                      rx={shape.width * scale / 2}
+                      ry={shape.height * scale / 2}
+                      fill="none"
+                      stroke={shape.color}
+                      strokeWidth={shape.strokeWidth}
+                    />
+                  );
+                })}
+                {createSpiderwebSpokes(shape.x, shape.y, shape.width, shape.height).map((spoke, index) => (
+                  <line
+                    key={`spoke-${index}`}
+                    {...spoke}
                     stroke={shape.color}
                     strokeWidth={shape.strokeWidth}
-                    pointerEvents="none"
                   />
-                );
-              })}
-              {createSpiderwebSpokes(shape.x, shape.y, shape.width, shape.height).map((spoke, index) => (
-                <line
-                  key={`spoke-${index}`}
-                  {...spoke}
-                  stroke={shape.color}
-                  strokeWidth={shape.strokeWidth}
-                  pointerEvents="none"
-                />
-              ))}
+                ))}
+              </g>
               {isSelected && (
                 <rect
                   x={shape.x}
@@ -864,6 +1023,7 @@ export function Canvas({
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={shape.x}
                   top={shape.y}
                   right={shape.x + shape.width}
@@ -880,41 +1040,44 @@ export function Canvas({
           return (
             <g
               key={shape.id}
+              transform={rotationTransform}
               style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}
-              onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+              onPointerDown={(e) => handleShapePointerDown(e, shape.id)}
             >
-              {createUnicornPaths(shape.x, shape.y, shape.width, shape.height, shape.color).map(({ path, fill, stroke, strokeWidth }, index) => (
-                <path
-                  key={index}
-                  d={path}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={strokeWidth}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <g opacity={shapeOpacity}>
+                {createUnicornPaths(shape.x, shape.y, shape.width, shape.height, shape.color).map(({ path, fill, fillPart, stroke, strokePart, strokeWidth }, index) => (
+                  <path
+                    key={index}
+                    d={path}
+                    fill={fillPart ? getPartColor(fillPart) : fill}
+                    stroke={strokePart ? getPartColor(strokePart) : stroke}
+                    strokeWidth={strokeWidth}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ))}
+                <ellipse
+                  cx={shape.x + shape.width * 0.85}
+                  cy={shape.y + shape.height * 0.46}
+                  rx={Math.max(1.5, shape.width * 0.022)}
+                  ry={Math.max(1.5, shape.height * 0.03)}
+                  fill={getPartColor('unicorn-eye')}
                 />
-              ))}
-              <ellipse
-                cx={shape.x + shape.width * 0.85}
-                cy={shape.y + shape.height * 0.46}
-                rx={Math.max(1.5, shape.width * 0.022)}
-                ry={Math.max(1.5, shape.height * 0.03)}
-                fill="#111827"
-              />
-              <ellipse
-                cx={shape.x + shape.width * 0.855}
-                cy={shape.y + shape.height * 0.45}
-                rx={Math.max(0.7, shape.width * 0.008)}
-                ry={Math.max(0.7, shape.height * 0.01)}
-                fill="#ffffff"
-              />
-              <ellipse
-                cx={shape.x + shape.width * 0.83}
-                cy={shape.y + shape.height * 0.55}
-                rx={Math.max(1.5, shape.width * 0.025)}
-                ry={Math.max(1.5, shape.height * 0.018)}
-                fill="#fb7185"
-              />
+                <ellipse
+                  cx={shape.x + shape.width * 0.855}
+                  cy={shape.y + shape.height * 0.45}
+                  rx={Math.max(0.7, shape.width * 0.008)}
+                  ry={Math.max(0.7, shape.height * 0.01)}
+                  fill={getPartColor('unicorn-white-details')}
+                />
+                <ellipse
+                  cx={shape.x + shape.width * 0.83}
+                  cy={shape.y + shape.height * 0.55}
+                  rx={Math.max(1.5, shape.width * 0.025)}
+                  ry={Math.max(1.5, shape.height * 0.018)}
+                  fill={getPartColor('unicorn-cheek')}
+                />
+              </g>
               {isSelected && (
                 <rect
                   x={shape.x}
@@ -930,6 +1093,7 @@ export function Canvas({
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={shape.x}
                   top={shape.y}
                   right={shape.x + shape.width}
@@ -946,12 +1110,19 @@ export function Canvas({
           return (
             <g
               key={shape.id}
+              transform={rotationTransform}
               style={{ cursor: tool === 'select' ? 'move' : 'crosshair' }}
-              onPointerDown={(e) => onShapePointerDown(e, shape.id)}
+              onPointerDown={(e) => handleShapePointerDown(e, shape.id)}
             >
-              {createRainbowBands(shape.x, shape.y, shape.width, shape.height).map(({ color, path }) => (
-                <path key={color} d={path} fill={color} />
-              ))}
+              <g opacity={shapeOpacity}>
+                {createRainbowBands(shape.x, shape.y, shape.width, shape.height).map(({ color, path }, index) => (
+                  <path
+                    key={rainbowColorPartKeys[index]}
+                    d={path}
+                    fill={getPartColor(rainbowColorPartKeys[index]) ?? color}
+                  />
+                ))}
+              </g>
               {isSelected && (
                 <rect
                   x={shape.x}
@@ -967,6 +1138,7 @@ export function Canvas({
               {isSelected && tool === 'select' && (
                 <ResizeHandles
                   id={shape.id}
+                  rotationLabel={t.rotation}
                   left={shape.x}
                   top={shape.y}
                   right={shape.x + shape.width}
@@ -980,11 +1152,12 @@ export function Canvas({
         }
 
         return (
-          <g key={shape.id}>
+          <g key={shape.id} transform={rotationTransform}>
             <path d={createHeartPath(shape.x, shape.y, shape.width, shape.height)} {...sharedProps} />
             {isSelected && tool === 'select' && (
               <ResizeHandles
                 id={shape.id}
+                rotationLabel={t.rotation}
                 left={shape.x}
                 top={shape.y}
                 right={shape.x + shape.width}
@@ -996,6 +1169,29 @@ export function Canvas({
           </g>
         );
       })}
-    </svg>
+      </svg>
+      <div className="canvas-zoom-control">
+        <label htmlFor="canvas-zoom-slider">{t.zoom}</label>
+        <input
+          id="canvas-zoom-slider"
+          type="range"
+          min={25}
+          max={400}
+          step={1}
+          value={zoom}
+          aria-label={t.zoom}
+          onChange={(event) => setZoom(Number(event.target.value))}
+        />
+        <button
+          type="button"
+          className="canvas-zoom-reset"
+          aria-label={t.resetZoom}
+          title={t.resetZoom}
+          onClick={() => setZoom(100)}
+        >
+          <span aria-hidden="true">🏠</span> {t.zoomHome}
+        </button>
+      </div>
+    </div>
   );
 }

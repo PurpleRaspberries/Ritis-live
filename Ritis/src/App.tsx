@@ -1,7 +1,7 @@
 // Samlar ritprogrammets tillstånd och kopplar ihop verktygsfält, canvas och egenskapspanel.
 // Hanterar filåtgärder och synkroniserar ritningens namn med webbläsarfliken.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { DrawingFileFormat, Layer, Shape, TextFontFamily, Tool } from './types';
+import type { DrawingFileFormat, Layer, Shape, ShapeColorPartKey, TextFontFamily, Tool } from './types';
 import { isLanguage, translations, type Language } from './i18n';
 import { Toolbar } from './components/Toolbar';
 import { RestartConfirmationDialog } from './components/RestartConfirmationDialog';
@@ -14,6 +14,15 @@ import {
   saveDrawingWithFilePicker,
   loadDrawingFromFile,
 } from './utils/storage';
+
+function hexToRgba(hex: string, opacity: number): string {
+  const normalized = hex.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return hex;
+  const red = parseInt(normalized.slice(0, 2), 16);
+  const green = parseInt(normalized.slice(2, 4), 16);
+  const blue = parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+}
 
 function offsetShape(shape: Shape, offset: number): Shape {
   if (shape.type === 'line') {
@@ -36,9 +45,17 @@ export default function App() {
   const [tool, setTool] = useState<Tool>('freehand');
   const [color, setColor] = useState('#3b82f6');
   const [penWidth, setPenWidth] = useState(10);
+  const [shapeOpacity, setShapeOpacity] = useState(1);
+  const [gridEnabled, setGridEnabled] = useState(() => window.localStorage.getItem('ritis-grid-enabled') === 'true');
+  const [gridSize, setGridSize] = useState(() => {
+    const savedSize = Number(window.localStorage.getItem('ritis-grid-size'));
+    return Number.isFinite(savedSize) && savedSize >= 1 && savedSize <= 40 ? savedSize : 20;
+  });
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const [backgroundTransparent, setBackgroundTransparent] = useState(false);
+  const [backgroundOpacity, setBackgroundOpacity] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
@@ -108,10 +125,19 @@ export default function App() {
     document.title = `${t.appTitle} - ${drawingName}`;
   }, [language, fileName, t.appTitle, t.newFileName]);
 
+  useEffect(() => {
+    window.localStorage.setItem('ritis-grid-enabled', String(gridEnabled));
+  }, [gridEnabled]);
+
+  useEffect(() => {
+    window.localStorage.setItem('ritis-grid-size', String(gridSize));
+  }, [gridSize]);
+
   const handleToolChange = (newTool: Tool) => {
     setTool(newTool);
     if (newTool !== 'select') {
       setSelectedId(null);
+      setEditingTextId(null);
     }
   };
 
@@ -128,12 +154,16 @@ export default function App() {
     setTool,
     color,
     penWidth,
+    shapeOpacity,
+    setEditingTextId,
     shapes,
     setShapes,
     selectedId,
     setSelectedId,
     activeLayer,
     setActiveLayer,
+    gridEnabled,
+    gridSize,
   });
 
   const handleColorChange = (newColor: string) => {
@@ -147,6 +177,15 @@ export default function App() {
     }
   };
 
+  const handlePartColorChange = (key: ShapeColorPartKey, newColor: string) => {
+    if (!selectedId) return;
+    setShapes((prev) => prev.map((shape) => (
+      shape.id === selectedId
+        ? { ...shape, partColors: { ...shape.partColors, [key]: newColor } }
+        : shape
+    )));
+  };
+
   const handlePenWidthChange = (width: number) => {
     setPenWidth(width);
     if (!selectedId) return;
@@ -157,10 +196,20 @@ export default function App() {
     )));
   };
 
+  const handleShapeOpacityChange = (opacity: number) => {
+    setShapeOpacity(opacity);
+    if (selectedId) {
+      setShapes((prev) => prev.map((shape) => (
+        shape.id === selectedId ? { ...shape, opacity } : shape
+      )));
+    }
+  };
+
   const deleteSelected = () => {
     if (!selectedId) return;
     setShapes((prev) => prev.filter((s) => s.id !== selectedId));
     setSelectedId(null);
+    setEditingTextId(null);
   };
 
   const handleDuplicateSelected = useCallback(() => {
@@ -239,6 +288,7 @@ export default function App() {
   const handleConfirmRestart = () => {
     setShapes([]);
     setSelectedId(null);
+    setEditingTextId(null);
     setRestartDialogOpen(false);
   };
 
@@ -247,8 +297,20 @@ export default function App() {
     loadDrawingFromFile(file, (loadedShapes, loadedBackgroundColor) => {
       setShapes(loadedShapes);
       setSelectedId(null);
+      setEditingTextId(null);
       setBackgroundTransparent(loadedBackgroundColor === null);
-      if (loadedBackgroundColor !== null) setBackgroundColor(loadedBackgroundColor);
+      if (loadedBackgroundColor !== null) {
+        const rgbaMatch = loadedBackgroundColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([.\d]+))?\)$/i);
+        if (rgbaMatch) {
+          const toHex = (value: number) => value.toString(16).padStart(2, '0');
+          setBackgroundColor(`#${toHex(Number(rgbaMatch[1]))}${toHex(Number(rgbaMatch[2]))}${toHex(Number(rgbaMatch[3]))}`);
+          setBackgroundOpacity(rgbaMatch[4] === undefined ? 1 : Number(rgbaMatch[4]));
+          setBackgroundTransparent(Number(rgbaMatch[4] ?? 1) === 0);
+        } else {
+          setBackgroundColor(loadedBackgroundColor);
+          setBackgroundOpacity(1);
+        }
+      }
       setFileName(file.name);
     }, language);
   };
@@ -312,6 +374,13 @@ export default function App() {
     }));
   };
 
+  const handleRotationChange = (rotation: number) => {
+    if (!selectedId) return;
+    setShapes((prev) => prev.map((shape) => (
+      shape.id === selectedId ? { ...shape, rotation } : shape
+    )));
+  };
+
   const handleTextChange = (id: string, text: string) => {
     if (selectedId !== id) return;
     setShapes((prev) => prev.map((shape) => (
@@ -350,7 +419,7 @@ export default function App() {
         canvasRef.current,
         fileName || t.newFileName,
         language,
-        backgroundTransparent ? null : backgroundColor,
+        backgroundTransparent ? null : hexToRgba(backgroundColor, backgroundOpacity),
       );
       if (result.status === 'unsupported') setSaveFormatDialogOpen(true);
       else if (result.status === 'saved') setFileName(result.fileName);
@@ -376,7 +445,7 @@ export default function App() {
         canvasRef.current,
         baseName,
         language,
-        backgroundTransparent ? null : backgroundColor,
+        backgroundTransparent ? null : hexToRgba(backgroundColor, backgroundOpacity),
       );
       if (saved) setFileName(`${baseName}.${extension}`);
     } catch (error) {
@@ -399,7 +468,6 @@ export default function App() {
         canUndo={canUndo}
         canRedo={canRedo}
         onDuplicateSelected={handleDuplicateSelected}
-        onDeleteSelected={deleteSelected}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onRestartRequest={() => setRestartDialogOpen(true)}
@@ -411,8 +479,14 @@ export default function App() {
         onLanguageChange={setLanguage}
         backgroundColor={backgroundColor}
         backgroundTransparent={backgroundTransparent}
+        backgroundOpacity={backgroundOpacity}
         onBackgroundColorChange={handleBackgroundColorChange}
         onBackgroundTransparentChange={setBackgroundTransparent}
+        onBackgroundOpacityChange={setBackgroundOpacity}
+        gridEnabled={gridEnabled}
+        gridSize={gridSize}
+        onGridEnabledChange={setGridEnabled}
+        onGridSizeChange={setGridSize}
       />
       <div
         className={backgroundTransparent ? 'canvas-transparent-background' : undefined}
@@ -421,10 +495,14 @@ export default function App() {
         <Canvas
           shapes={allShapes}
           selectedId={selectedId}
+          editingTextId={editingTextId}
+          setEditingTextId={setEditingTextId}
           tool={tool}
           language={language}
-          backgroundColor={backgroundTransparent ? 'transparent' : backgroundColor}
+          backgroundColor={backgroundTransparent ? 'transparent' : hexToRgba(backgroundColor, backgroundOpacity)}
           svgRef={canvasRef}
+          gridEnabled={gridEnabled}
+          gridSize={gridSize}
           onTextChange={handleTextChange}
           onCanvasPointerDown={handleCanvasPointerDown}
           onShapePointerDown={handleShapePointerDown}
@@ -439,9 +517,12 @@ export default function App() {
           penWidth={penWidth}
           penColor={color}
           onPenWidthChange={handlePenWidthChange}
+          shapeOpacity={shapeOpacity}
+          onShapeOpacityChange={handleShapeOpacityChange}
           selectedShape={shapes.find((shape) => shape.id === selectedId) ?? null}
           onPositionChange={handlePositionChange}
           onSizeChange={handleSizeChange}
+          onRotationChange={handleRotationChange}
           onTextChange={(text) => {
             if (selectedId) handleTextChange(selectedId, text);
           }}
@@ -449,6 +530,8 @@ export default function App() {
           onTextFontChange={handleTextFontChange}
           onLayerChange={handleLayerChange}
           onColorChange={handleColorChange}
+          onPartColorChange={handlePartColorChange}
+          onDeleteSelected={deleteSelected}
         />
       </div>
       {restartDialogOpen && (

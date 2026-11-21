@@ -1,8 +1,9 @@
 // Visar och redigerar egenskaper för det objekt som är markerat på canvasen.
 // Tar emot objekt och ändringsfunktioner från App och använder färgväljaren.
-import { textFontFamilies, type Layer, type Shape, type TextFontFamily, type Tool } from '../types';
+import { textFontFamilies, type Layer, type Shape, type ShapeColorPartKey, type TextFontFamily, type Tool } from '../types';
 import { translations, type Language } from '../i18n';
 import { ColorPicker } from './ColorPicker';
+import { getShapeColorParts } from '../utils/shapeColors';
 
 interface PropertiesPanelProps {
   language: Language;
@@ -10,14 +11,19 @@ interface PropertiesPanelProps {
   penWidth: number;
   penColor: string;
   onPenWidthChange: (width: number) => void;
+  shapeOpacity: number;
+  onShapeOpacityChange: (opacity: number) => void;
   selectedShape: Shape | null;
   onPositionChange: (axis: 'x' | 'y', value: number) => void;
   onSizeChange: (dimension: 'width' | 'height', value: number) => void;
+  onRotationChange: (rotation: number) => void;
   onTextChange: (text: string) => void;
   onTextSizeChange: (fontSize: number) => void;
   onTextFontChange: (fontFamily: TextFontFamily) => void;
   onLayerChange: (layer: Layer) => void;
   onColorChange: (color: string) => void;
+  onPartColorChange: (key: ShapeColorPartKey, color: string) => void;
+  onDeleteSelected: () => void;
 }
 
 export function PropertiesPanel({
@@ -26,14 +32,19 @@ export function PropertiesPanel({
   penWidth,
   penColor,
   onPenWidthChange,
+  shapeOpacity,
+  onShapeOpacityChange,
   selectedShape,
   onPositionChange,
   onSizeChange,
+  onRotationChange,
   onTextChange,
   onTextSizeChange,
   onTextFontChange,
   onLayerChange,
   onColorChange,
+  onPartColorChange,
+  onDeleteSelected,
 }: PropertiesPanelProps) {
   const t = translations[language];
   // Ett markerat streck visar sina egna värden; annars visas inställningarna för nästa streck.
@@ -49,6 +60,8 @@ export function PropertiesPanel({
   const displayedPenColor = selectedShape && selectedShape.type !== 'rainbow'
     ? selectedShape.color
     : penColor;
+  const displayedShapeOpacity = selectedShape?.opacity ?? shapeOpacity;
+  const shapeColorParts = selectedShape ? getShapeColorParts(selectedShape) : [];
   const getPositionValue = (axis: 'x' | 'y') => {
     if (!selectedShape) return 0;
     if (selectedShape.type === 'circle') {
@@ -90,39 +103,6 @@ export function PropertiesPanel({
         minHeight: 0,
       }}
     >
-      <div className="properties-color-setting">
-        <ColorPicker color={displayedPenColor} onColorChange={onColorChange} language={language} />
-      </div>
-      {showsPenWidth && (
-        <div className="pen-width-setting" style={{ margin: '16px 16px 0' }}>
-          <label htmlFor="pen-width-slider">{t.penThickness}</label>
-          <div className="pen-width-slider-row">
-            <span className="pen-width-endpoint pen-width-small" aria-hidden="true" />
-            <input
-              id="pen-width-slider"
-              type="range"
-              min={4}
-              max={32}
-              step={2}
-              value={displayedPenWidth}
-              aria-label={t.penThickness}
-              onChange={(event) => onPenWidthChange(Number(event.target.value))}
-            />
-            <span className="pen-width-endpoint pen-width-large" aria-hidden="true" />
-          </div>
-          <svg className="pen-width-preview" viewBox="0 0 100 40" aria-hidden="true">
-            <line
-              x1="14"
-              y1="20"
-              x2="86"
-              y2="20"
-              stroke={displayedPenColor}
-              strokeWidth={displayedPenWidth}
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-      )}
       <aside
         style={{
           flex: 1,
@@ -133,6 +113,45 @@ export function PropertiesPanel({
         }}
       >
         <h2 style={{ marginTop: 0, fontSize: '18px' }}>{t.propertiesTitle}</h2>
+        <div className="properties-color-setting" style={{ margin: '0 0 16px' }}>
+          <ColorPicker
+            color={displayedPenColor}
+            onColorChange={onColorChange}
+            opacity={displayedShapeOpacity}
+            onOpacityChange={onShapeOpacityChange}
+            language={language}
+          />
+        </div>
+        {showsPenWidth && (
+          <div className="pen-width-setting" style={{ margin: '0 0 16px' }}>
+            <label htmlFor="pen-width-slider">{t.penThickness}</label>
+            <div className="pen-width-slider-row">
+              <span className="pen-width-endpoint pen-width-small" aria-hidden="true" />
+              <input
+                id="pen-width-slider"
+                type="range"
+                min={4}
+                max={32}
+                step={2}
+                value={displayedPenWidth}
+                aria-label={t.penThickness}
+                onChange={(event) => onPenWidthChange(Number(event.target.value))}
+              />
+              <span className="pen-width-endpoint pen-width-large" aria-hidden="true" />
+            </div>
+            <svg className="pen-width-preview" viewBox="0 0 100 40" aria-hidden="true">
+              <line
+                x1="14"
+                y1="20"
+                x2="86"
+                y2="20"
+                stroke={displayedPenColor}
+                strokeWidth={displayedPenWidth}
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        )}
         {!selectedShape ? (
           showsPenWidth ? null : <p>{t.noSelection}</p>
         ) : (
@@ -223,6 +242,20 @@ export function PropertiesPanel({
             )}
 
             <label style={{ display: 'block', marginBottom: '12px' }}>
+              {t.rotation}: {Math.round(selectedShape.rotation ?? 0)}°
+              <input
+                type="range"
+                min={0}
+                max={359}
+                step={1}
+                value={Math.round(selectedShape.rotation ?? 0)}
+                aria-label={t.rotation}
+                onChange={(event) => onRotationChange(Number(event.target.value))}
+                style={{ width: '100%', boxSizing: 'border-box', marginTop: '4px' }}
+              />
+            </label>
+
+            <label style={{ display: 'block', marginBottom: '12px' }}>
               {t.layer}
               <select
                 value={selectedShape.layer}
@@ -234,9 +267,48 @@ export function PropertiesPanel({
                 ))}
               </select>
             </label>
+            {shapeColorParts.length > 0 && (
+              <details className="properties-color-parts">
+                <summary>{t.adjustObjectColors}</summary>
+                <div className="properties-color-parts-list">
+                  {shapeColorParts.map(({ key, color }) => (
+                    <label key={key} className="properties-color-part">
+                      <span>{t.colorPartLabels[key]}</span>
+                      <input
+                        type="color"
+                        value={color}
+                        aria-label={t.colorPartLabels[key]}
+                        onChange={(event) => onPartColorChange(key, event.target.value)}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </details>
+            )}
           </>
         )}
       </aside>
+      {selectedShape && (
+        <div style={{ padding: '12px 16px 16px', borderTop: '1px solid #e2e8f0', background: '#f9fafb' }}>
+          <button
+            type="button"
+            className="properties-delete-button"
+            onClick={onDeleteSelected}
+            style={{
+              width: '100%',
+              minHeight: '44px',
+              border: '2px solid #fecaca',
+              borderRadius: '10px',
+              background: '#fff7f7',
+              color: '#b91c1c',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            🗑️ {t.deleteSelected}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

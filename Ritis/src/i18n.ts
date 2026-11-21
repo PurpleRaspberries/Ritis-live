@@ -1,6 +1,6 @@
 // Samlar användartexter för svenska, engelska och tyska.
 // Appens komponenter hämtar sina etiketter och felmeddelanden från dessa språksträngar.
-import type { Tool } from './types';
+import type { ShapeColorPartKey, Tool } from './types';
 
 export type Language = 'sv' | 'en' | 'de';
 export type ColorName = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'black';
@@ -18,6 +18,10 @@ export interface AppStrings {
   figures: string;
   additionalFigures: string;
   moreOptions: string;
+  editing: string;
+  grid: string;
+  gridEnabled: string;
+  gridSpacing: string;
   copySelected: string;
   deleteSelected: string;
   undo: string;
@@ -59,7 +63,9 @@ export interface AppStrings {
   svgFileType: string;
   colorLabel: string;
   colorNames: Record<ColorName, string>;
+  colorPartLabels: Record<ShapeColorPartKey, string>;
   customColor: string;
+  adjustObjectColors: string;
   chooseColor: (color: string) => string;
   chooseCustomColor: string;
   propertiesTitle: string;
@@ -71,7 +77,13 @@ export interface AppStrings {
   fontFamily: string;
   width: string;
   height: string;
+  rotation: string;
+  zoom: string;
+  zoomHome: string;
+  resetZoom: string;
   penThickness: string;
+  opacity: string;
+  fullyTransparent: string;
   lineStartPoint: string;
   lineEndPoint: string;
   doubleClickToEditText: string;
@@ -137,6 +149,10 @@ export const translations: Record<Language, AppStrings> = {
     figures: 'Figurer',
     additionalFigures: 'Fler ritfigurer',
     moreOptions: 'Fler val',
+    editing: 'Redigera',
+    grid: 'Rutnät',
+    gridEnabled: 'Slå på rutnät',
+    gridSpacing: 'Avstånd mellan punkterna',
     copySelected: 'Kopiera vald',
     deleteSelected: 'Ta bort vald sak',
     undo: 'Ångra',
@@ -187,7 +203,42 @@ export const translations: Record<Language, AppStrings> = {
       pink: 'Rosa',
       black: 'Svart',
     },
+    colorPartLabels: {
+      'sun-rays': 'Solstrålar',
+      'sun-center': 'Solens mitt',
+      'gingerbread-body': 'Kropp',
+      'gingerbread-outline': 'Kontur',
+      'gingerbread-eyes': 'Ögon',
+      'gingerbread-button-red': 'Röd knapp',
+      'gingerbread-button-green': 'Grön knapp',
+      'flower-petals': 'Blomblad',
+      'flower-center': 'Blommans mitt',
+      'leaf-body': 'Blad',
+      'leaf-outline': 'Bladets kontur',
+      'leaf-veins': 'Bladnerver',
+      'rainbow-band-1': 'Regnbågsband 1',
+      'rainbow-band-2': 'Regnbågsband 2',
+      'rainbow-band-3': 'Regnbågsband 3',
+      'rainbow-band-4': 'Regnbågsband 4',
+      'rainbow-band-5': 'Regnbågsband 5',
+      'rainbow-band-6': 'Regnbågsband 6',
+      'rainbow-band-7': 'Regnbågsband 7',
+      'unicorn-pink': 'Rosa delar',
+      'unicorn-body': 'Kropp',
+      'unicorn-mane': 'Man',
+      'unicorn-horn': 'Horn',
+      'unicorn-ear': 'Öra',
+      'unicorn-ear-detail': 'Örats insida',
+      'unicorn-mane-highlight': 'Blå manstrimma',
+      'unicorn-muzzle': 'Mule',
+      'unicorn-brown-details': 'Bruna detaljer',
+      'unicorn-white-details': 'Vita detaljer',
+      'unicorn-star': 'Stjärna',
+      'unicorn-eye': 'Öga',
+      'unicorn-cheek': 'Kind',
+    },
     customColor: 'Egen färg',
+    adjustObjectColors: 'Ändra alla färger',
     chooseColor: (color) => `Välj färgen ${color}`,
     chooseCustomColor: 'Välj en egen färg',
     propertiesTitle: 'Egenskaper',
@@ -199,7 +250,13 @@ export const translations: Record<Language, AppStrings> = {
     fontFamily: 'Typsnitt',
     width: 'Bredd',
     height: 'Höjd',
+    rotation: 'Rotation',
+    zoom: 'Zoom',
+    zoomHome: 'Hem',
+    resetZoom: 'Tillbaka till normal storlek',
     penThickness: 'Pennans tjocklek',
+    opacity: 'Genomskinlighet',
+    fullyTransparent: 'Helt genomskinlig',
     lineStartPoint: 'Linjens startpunkt',
     lineEndPoint: 'Linjens slutpunkt',
     doubleClickToEditText: 'Dubbelklicka för att redigera texten',
@@ -263,6 +320,10 @@ export const translations: Record<Language, AppStrings> = {
     figures: 'Figures',
     additionalFigures: 'More figures',
     moreOptions: 'More options',
+    editing: 'Edit',
+    grid: 'Grid',
+    gridEnabled: 'Enable grid',
+    gridSpacing: 'Spacing between points',
     copySelected: 'Copy selected',
     deleteSelected: 'Delete selected',
     undo: 'Undo',
@@ -313,7 +374,42 @@ export const translations: Record<Language, AppStrings> = {
       pink: 'Pink',
       black: 'Black',
     },
+    colorPartLabels: {
+      'sun-rays': 'Sun rays',
+      'sun-center': 'Sun center',
+      'gingerbread-body': 'Body',
+      'gingerbread-outline': 'Outline',
+      'gingerbread-eyes': 'Eyes',
+      'gingerbread-button-red': 'Red button',
+      'gingerbread-button-green': 'Green button',
+      'flower-petals': 'Petals',
+      'flower-center': 'Flower center',
+      'leaf-body': 'Leaf',
+      'leaf-outline': 'Leaf outline',
+      'leaf-veins': 'Leaf veins',
+      'rainbow-band-1': 'Rainbow band 1',
+      'rainbow-band-2': 'Rainbow band 2',
+      'rainbow-band-3': 'Rainbow band 3',
+      'rainbow-band-4': 'Rainbow band 4',
+      'rainbow-band-5': 'Rainbow band 5',
+      'rainbow-band-6': 'Rainbow band 6',
+      'rainbow-band-7': 'Rainbow band 7',
+      'unicorn-pink': 'Pink parts',
+      'unicorn-body': 'Body',
+      'unicorn-mane': 'Mane',
+      'unicorn-horn': 'Horn',
+      'unicorn-ear': 'Ear',
+      'unicorn-ear-detail': 'Inner ear',
+      'unicorn-mane-highlight': 'Blue mane stripe',
+      'unicorn-muzzle': 'Muzzle',
+      'unicorn-brown-details': 'Brown details',
+      'unicorn-white-details': 'White details',
+      'unicorn-star': 'Star',
+      'unicorn-eye': 'Eye',
+      'unicorn-cheek': 'Cheek',
+    },
     customColor: 'Custom color',
+    adjustObjectColors: 'Change all colors',
     chooseColor: (color) => `Choose ${color}`,
     chooseCustomColor: 'Choose a custom color',
     propertiesTitle: 'Properties',
@@ -325,7 +421,13 @@ export const translations: Record<Language, AppStrings> = {
     fontFamily: 'Font',
     width: 'Width',
     height: 'Height',
+    rotation: 'Rotation',
+    zoom: 'Zoom',
+    zoomHome: 'Home',
+    resetZoom: 'Back to normal size',
     penThickness: 'Pen thickness',
+    opacity: 'Transparency',
+    fullyTransparent: 'Fully transparent',
     lineStartPoint: 'Line start point',
     lineEndPoint: 'Line end point',
     doubleClickToEditText: 'Double-click to edit the text',
@@ -389,6 +491,10 @@ export const translations: Record<Language, AppStrings> = {
     figures: 'Figuren',
     additionalFigures: 'Weitere Figuren',
     moreOptions: 'Mehr Optionen',
+    editing: 'Bearbeiten',
+    grid: 'Raster',
+    gridEnabled: 'Raster einschalten',
+    gridSpacing: 'Abstand zwischen Punkten',
     copySelected: 'Auswahl kopieren',
     deleteSelected: 'Ausgewähltes löschen',
     undo: 'Rückgängig',
@@ -439,7 +545,42 @@ export const translations: Record<Language, AppStrings> = {
       pink: 'Rosa',
       black: 'Schwarz',
     },
+    colorPartLabels: {
+      'sun-rays': 'Sonnenstrahlen',
+      'sun-center': 'Sonnenmitte',
+      'gingerbread-body': 'Körper',
+      'gingerbread-outline': 'Umriss',
+      'gingerbread-eyes': 'Augen',
+      'gingerbread-button-red': 'Roter Knopf',
+      'gingerbread-button-green': 'Grüner Knopf',
+      'flower-petals': 'Blütenblätter',
+      'flower-center': 'Blütenmitte',
+      'leaf-body': 'Blatt',
+      'leaf-outline': 'Blattumriss',
+      'leaf-veins': 'Blattadern',
+      'rainbow-band-1': 'Regenbogenstreifen 1',
+      'rainbow-band-2': 'Regenbogenstreifen 2',
+      'rainbow-band-3': 'Regenbogenstreifen 3',
+      'rainbow-band-4': 'Regenbogenstreifen 4',
+      'rainbow-band-5': 'Regenbogenstreifen 5',
+      'rainbow-band-6': 'Regenbogenstreifen 6',
+      'rainbow-band-7': 'Regenbogenstreifen 7',
+      'unicorn-pink': 'Rosa Teile',
+      'unicorn-body': 'Körper',
+      'unicorn-mane': 'Mähne',
+      'unicorn-horn': 'Horn',
+      'unicorn-ear': 'Ohr',
+      'unicorn-ear-detail': 'Innenohr',
+      'unicorn-mane-highlight': 'Blaue Mähnensträhne',
+      'unicorn-muzzle': 'Schnauze',
+      'unicorn-brown-details': 'Braune Details',
+      'unicorn-white-details': 'Weiße Details',
+      'unicorn-star': 'Stern',
+      'unicorn-eye': 'Auge',
+      'unicorn-cheek': 'Wange',
+    },
     customColor: 'Eigene Farbe',
+    adjustObjectColors: 'Alle Farben ändern',
     chooseColor: (color) => `Farbe ${color} auswählen`,
     chooseCustomColor: 'Eigene Farbe auswählen',
     propertiesTitle: 'Eigenschaften',
@@ -451,7 +592,13 @@ export const translations: Record<Language, AppStrings> = {
     fontFamily: 'Schriftart',
     width: 'Breite',
     height: 'Höhe',
+    rotation: 'Drehung',
+    zoom: 'Zoom',
+    zoomHome: 'Start',
+    resetZoom: 'Zur normalen Größe zurück',
     penThickness: 'Stiftdicke',
+    opacity: 'Transparenz',
+    fullyTransparent: 'Vollständig transparent',
     lineStartPoint: 'Linienanfang',
     lineEndPoint: 'Linienende',
     doubleClickToEditText: 'Doppelklicken, um den Text zu bearbeiten',

@@ -6,7 +6,8 @@ interface BackgroundSettingsDialogProps {
   language: Language;
   backgroundColor: string;
   backgroundTransparent: boolean;
-  onConfirm: (color: string, transparent: boolean) => void;
+  backgroundOpacity: number;
+  onConfirm: (color: string, transparent: boolean, opacity: number) => void;
   onCancel: () => void;
 }
 
@@ -14,13 +15,14 @@ export function BackgroundSettingsDialog({
   language,
   backgroundColor,
   backgroundTransparent,
+  backgroundOpacity,
   onConfirm,
   onCancel,
 }: BackgroundSettingsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const [draftColor, setDraftColor] = useState(backgroundColor);
-  const [draftTransparent, setDraftTransparent] = useState(backgroundTransparent);
+  const [draftOpacity, setDraftOpacity] = useState(backgroundTransparent ? 0 : backgroundOpacity);
   const t = translations[language];
 
   useLayoutEffect(() => {
@@ -53,48 +55,40 @@ export function BackgroundSettingsDialog({
     >
       <span className="restart-dialog-icon" aria-hidden="true">🎨</span>
       <h2 id="background-dialog-title">{t.backgroundDialogTitle}</h2>
-      <div className="background-dialog-options" role="radiogroup" aria-label={t.backgroundDialogTitle}>
-        <div className="background-dialog-option">
-          <label className="background-dialog-choice">
-            <input
-              type="radio"
-              name="background-mode"
-              checked={!draftTransparent}
-              onChange={() => setDraftTransparent(false)}
-            />
-            <span>{t.backgroundColor}</span>
-          </label>
+      <div className="background-dialog-options">
+        <div className="background-dialog-option background-dialog-color-option">
+          <span>{t.backgroundColor}</span>
           <input
             className="background-dialog-color-input"
             type="color"
             value={draftColor}
             aria-label={t.backgroundColor}
-            disabled={draftTransparent}
             onChange={(event) => {
               setDraftColor(event.target.value);
-              setDraftTransparent(false);
             }}
           />
+          <label className="opacity-setting background-opacity-setting">
+            <span>{t.opacity}: {Math.round((1 - draftOpacity) * 100)}%</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round((1 - draftOpacity) * 100)}
+              aria-label={t.opacity}
+              onChange={(event) => setDraftOpacity(1 - Number(event.target.value) / 100)}
+            />
+          </label>
         </div>
-        <label className="background-dialog-option background-dialog-choice">
-          <input
-            type="radio"
-            name="background-mode"
-            checked={draftTransparent}
-            onChange={() => setDraftTransparent(true)}
-          />
-          <span>{t.transparentBackground}</span>
-          <span className="background-dialog-transparent-preview" aria-hidden="true" />
-        </label>
       </div>
-      {draftTransparent && (
+      {draftOpacity < 1 && (
         <p className="toolbar-note background-dialog-note">{t.jpegTransparencyNote}</p>
       )}
       <div className="restart-dialog-actions">
         <button
           type="button"
           className="restart-dialog-button restart-dialog-confirm"
-          onClick={() => onConfirm(draftColor, draftTransparent)}
+          onClick={() => onConfirm(draftColor, draftOpacity === 0, draftOpacity)}
         >
           <span>{t.confirmBackground}</span>
         </button>

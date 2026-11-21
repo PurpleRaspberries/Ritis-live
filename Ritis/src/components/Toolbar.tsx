@@ -13,7 +13,6 @@ interface ToolbarProps {
   canUndo: boolean;
   canRedo: boolean;
   onDuplicateSelected: () => void;
-  onDeleteSelected: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onRestartRequest: () => void;
@@ -25,13 +24,15 @@ interface ToolbarProps {
   onLanguageChange: (language: Language) => void;
   backgroundColor: string;
   backgroundTransparent: boolean;
+  backgroundOpacity: number;
   onBackgroundColorChange: (color: string) => void;
   onBackgroundTransparentChange: (transparent: boolean) => void;
+  onBackgroundOpacityChange: (opacity: number) => void;
+  gridEnabled: boolean;
+  gridSize: number;
+  onGridEnabledChange: (enabled: boolean) => void;
+  onGridSizeChange: (size: number) => void;
 }
-
-const tools: Array<{ tool: Tool; icon: string }> = [
-  { tool: 'select', icon: '👆' },
-];
 
 const basicShapeTools: Array<{ tool: Tool; icon: string }> = [
   { tool: 'freehand', icon: '✏️' },
@@ -57,6 +58,12 @@ const shapeTools: Array<{ tool: Tool; icon: string }> = [
 
 const languages: Language[] = ['sv', 'en', 'de'];
 
+function hexToRgbaPreview(hex: string, opacity: number): string {
+  const normalized = hex.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return hex;
+  return `rgba(${parseInt(normalized.slice(0, 2), 16)}, ${parseInt(normalized.slice(2, 4), 16)}, ${parseInt(normalized.slice(4, 6), 16)}, ${opacity})`;
+}
+
 export function Toolbar({
   tool,
   setTool,
@@ -64,7 +71,6 @@ export function Toolbar({
   canUndo,
   canRedo,
   onDuplicateSelected,
-  onDeleteSelected,
   onUndo,
   onRedo,
   onRestartRequest,
@@ -76,13 +82,20 @@ export function Toolbar({
   onLanguageChange,
   backgroundColor,
   backgroundTransparent,
+  backgroundOpacity,
   onBackgroundColorChange,
   onBackgroundTransparentChange,
+  onBackgroundOpacityChange,
+  gridEnabled,
+  gridSize,
+  onGridEnabledChange,
+  onGridSizeChange,
 }: ToolbarProps) {
   const t = translations[language];
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shapeMenuRef = useRef<HTMLDetailsElement>(null);
   const basicShapeMenuRef = useRef<HTMLDetailsElement>(null);
+  const editMenuRef = useRef<HTMLDetailsElement>(null);
   const moreMenuRef = useRef<HTMLDetailsElement>(null);
   const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
@@ -93,7 +106,7 @@ export function Toolbar({
       const target = event.target;
       if (!(target instanceof Node)) return;
 
-      [moreMenuRef.current, shapeMenuRef.current, basicShapeMenuRef.current].forEach((menu) => {
+      [moreMenuRef.current, shapeMenuRef.current, basicShapeMenuRef.current, editMenuRef.current].forEach((menu) => {
         if (menu?.open && !menu.contains(target)) {
           menu.open = false;
         }
@@ -123,6 +136,11 @@ export function Toolbar({
     action();
   };
 
+  const handleEditMenuAction = (action: () => void) => {
+    if (editMenuRef.current) editMenuRef.current.open = false;
+    action();
+  };
+
   return (
     <header className="toolbar">
       <div className="toolbar-main">
@@ -131,38 +149,54 @@ export function Toolbar({
           <p className="toolbar-instruction" aria-live="polite">{t.toolInstructions[tool]}</p>
         </div>
         <div className="toolbar-tools" role="group" aria-label={t.toolsAriaLabel}>
-          {tools.map(({ tool: toolName, icon }) => (
-            <button
-              key={toolName}
-              type="button"
-              className={`toolbar-tool${tool === toolName ? ' is-active' : ''}`}
-              onClick={() => setTool(toolName)}
-              aria-pressed={tool === toolName}
-            >
-              <span className="toolbar-tool-icon" aria-hidden="true">{icon}</span>
-              <span>{t.toolLabels[toolName]}</span>
-            </button>
-          ))}
-          <button
-            type="button"
-            className="toolbar-tool"
-            onClick={onUndo}
-            disabled={!canUndo}
-            aria-keyshortcuts="Control+Z Meta+Z"
-          >
-            <span className="toolbar-tool-icon" aria-hidden="true">↶</span>
-            <span>{t.undo}</span>
-          </button>
-          <button
-            type="button"
-            className="toolbar-tool"
-            onClick={onRedo}
-            disabled={!canRedo}
-            aria-keyshortcuts="Control+Y Control+Shift+Z Meta+Y Meta+Shift+Z"
-          >
-            <span className="toolbar-tool-icon" aria-hidden="true">↷</span>
-            <span>{t.redo}</span>
-          </button>
+          <details ref={editMenuRef} className="toolbar-shapes-menu toolbar-edit-menu">
+            <summary className={`toolbar-tool toolbar-shapes-trigger${tool === 'select' ? ' is-active' : ''}`}>
+              <span className="toolbar-tool-icon" aria-hidden="true">✂️</span>
+              <span>{t.editing}</span>
+            </summary>
+            <div className="toolbar-shapes-panel toolbar-edit-panel" role="group" aria-label={t.editing}>
+              <button
+                type="button"
+                className={`toolbar-tool${tool === 'select' ? ' is-active' : ''}`}
+                onClick={() => handleEditMenuAction(() => setTool('select'))}
+                aria-pressed={tool === 'select'}
+              >
+                <span className="toolbar-tool-icon" aria-hidden="true">👆</span>
+                <span>{t.toolLabels.select}</span>
+              </button>
+              <button
+                type="button"
+                className="toolbar-tool"
+                onClick={() => handleEditMenuAction(onUndo)}
+                disabled={!canUndo}
+                aria-keyshortcuts="Control+Z Meta+Z"
+              >
+                <span className="toolbar-tool-icon" aria-hidden="true">↶</span>
+                <span>{t.undo}</span>
+              </button>
+              <button
+                type="button"
+                className="toolbar-tool"
+                onClick={() => handleEditMenuAction(onRedo)}
+                disabled={!canRedo}
+                aria-keyshortcuts="Control+Y Control+Shift+Z Meta+Y Meta+Shift+Z"
+              >
+                <span className="toolbar-tool-icon" aria-hidden="true">↷</span>
+                <span>{t.redo}</span>
+              </button>
+              {hasSelection && (
+                <button
+                  type="button"
+                  className="toolbar-tool"
+                  onClick={() => handleEditMenuAction(onDuplicateSelected)}
+                  aria-keyshortcuts="Control+D Meta+D"
+                >
+                  <span className="toolbar-tool-icon" aria-hidden="true">📋</span>
+                  <span>{t.copySelected}</span>
+                </button>
+              )}
+            </div>
+          </details>
           <details ref={basicShapeMenuRef} className="toolbar-shapes-menu">
             <summary className={`toolbar-tool toolbar-shapes-trigger${basicShapeTools.some(({ tool: shapeTool }) => shapeTool === tool) ? ' is-active' : ''}`}>
               <span className="toolbar-tool-icon" aria-hidden="true">🔷</span>
@@ -203,27 +237,6 @@ export function Toolbar({
               ))}
             </div>
           </details>
-          {hasSelection && (
-            <button
-              type="button"
-              className="toolbar-tool"
-              onClick={onDuplicateSelected}
-              aria-keyshortcuts="Control+D Meta+D"
-            >
-              <span className="toolbar-tool-icon" aria-hidden="true">📋</span>
-              <span>{t.copySelected}</span>
-            </button>
-          )}
-          {hasSelection && (
-            <button
-              type="button"
-              className="toolbar-tool toolbar-delete"
-              onClick={onDeleteSelected}
-            >
-              <span className="toolbar-tool-icon" aria-hidden="true">🗑️</span>
-              <span>{t.deleteSelected}</span>
-            </button>
-          )}
           <button
             type="button"
             className="toolbar-tool toolbar-reset"
@@ -269,6 +282,28 @@ export function Toolbar({
             </select>
           </label>
 
+          <label className="toolbar-background-toggle">
+            <input
+              type="checkbox"
+              checked={gridEnabled}
+              onChange={(event) => onGridEnabledChange(event.target.checked)}
+            />
+            <span>{t.gridEnabled}</span>
+          </label>
+
+          <label className="toolbar-setting">
+            {t.gridSpacing}: {gridSize} px
+            <input
+              type="range"
+              min={1}
+              max={40}
+              step={1}
+              value={gridSize}
+              disabled={!gridEnabled}
+              onChange={(event) => onGridSizeChange(Number(event.target.value))}
+            />
+          </label>
+
           <button
             type="button"
             className="toolbar-background-open"
@@ -276,7 +311,7 @@ export function Toolbar({
           >
             <span
               className={`toolbar-background-preview${backgroundTransparent ? ' is-transparent' : ''}`}
-              style={backgroundTransparent ? undefined : { backgroundColor }}
+              style={backgroundTransparent ? undefined : { backgroundColor: hexToRgbaPreview(backgroundColor, backgroundOpacity) }}
               aria-hidden="true"
             />
             <span>{backgroundTransparent ? t.transparentBackground : t.backgroundColor}</span>
@@ -302,9 +337,11 @@ export function Toolbar({
           language={language}
           backgroundColor={backgroundColor}
           backgroundTransparent={backgroundTransparent}
-          onConfirm={(nextColor, nextTransparent) => {
+          backgroundOpacity={backgroundOpacity}
+          onConfirm={(nextColor, nextTransparent, nextOpacity) => {
             onBackgroundColorChange(nextColor);
             onBackgroundTransparentChange(nextTransparent);
+            onBackgroundOpacityChange(nextOpacity);
             setBackgroundDialogOpen(false);
           }}
           onCancel={() => setBackgroundDialogOpen(false)}

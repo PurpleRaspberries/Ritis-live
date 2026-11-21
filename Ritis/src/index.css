@@ -232,6 +232,11 @@ body {
   box-shadow: 0 8px 24px rgb(15 23 42 / 18%);
 }
 
+.toolbar-edit-panel {
+  grid-template-columns: repeat(2, minmax(90px, 1fr));
+  width: min(220px, calc(100vw - 24px));
+}
+
 .toolbar-more {
   position: relative;
   flex: 0 0 auto;
@@ -346,6 +351,138 @@ body {
   color: #1e293b;
   font-size: 15px;
   font-weight: 700;
+}
+
+.opacity-setting {
+  grid-column: span 4;
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.opacity-setting input[type='range'] {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.opacity-setting input[type='range']:focus-visible {
+  outline: 3px solid #7c3aed;
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+.opacity-setting input[type='range']::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #ddd6fe;
+}
+
+.opacity-setting input[type='range']::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #ddd6fe;
+}
+
+.opacity-setting input[type='range']::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #7c3aed;
+  box-shadow: 0 1px 5px rgb(15 23 42 / 35%);
+  appearance: none;
+}
+
+.opacity-setting input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #7c3aed;
+  box-shadow: 0 1px 5px rgb(15 23 42 / 35%);
+}
+
+.background-opacity-setting {
+  margin-top: 12px;
+}
+
+.background-dialog-color-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.background-dialog-color-option .opacity-setting {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.properties-color-parts {
+  margin: 0 0 12px;
+}
+
+.properties-color-parts summary {
+  min-height: 44px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  border: 2px solid #c4b5fd;
+  border-radius: 10px;
+  background: #fff;
+  color: #1e293b;
+  font-weight: 700;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.properties-color-parts[open] summary {
+  border-color: #7c3aed;
+  background: #ede9fe;
+}
+
+.properties-color-parts-list {
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  margin-top: 8px;
+  padding: 10px;
+  overflow-y: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.properties-color-part {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.properties-color-part input[type='color'] {
+  width: 44px;
+  height: 36px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid #94a3b8;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
 }
 
 .pen-width-slider-row {
@@ -579,6 +716,64 @@ body {
 
 .toolbar-file-input {
   display: none;
+}
+
+.canvas-viewport {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.canvas-zoom-control {
+  position: absolute;
+  z-index: 4;
+  bottom: 12px;
+  left: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(100px, 160px) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 18%);
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.canvas-zoom-control input[type='range'] {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: #7c3aed;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.canvas-zoom-reset {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font: inherit;
+  cursor: pointer;
+}
+
+.canvas-zoom-reset:hover {
+  background: #f1f5f9;
 }
 
 .canvas-transparent-background {

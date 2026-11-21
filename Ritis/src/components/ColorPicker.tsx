@@ -17,11 +17,13 @@ const colors = [
 interface ColorPickerProps {
   color: string;
   onColorChange: (color: string) => void;
+  opacity: number;
+  onOpacityChange: (opacity: number) => void;
   language: Language;
   popup?: boolean;
 }
 
-export function ColorPicker({ color, onColorChange, language, popup = false }: ColorPickerProps) {
+export function ColorPicker({ color, onColorChange, opacity, onOpacityChange, language, popup = false }: ColorPickerProps) {
   const t = translations[language];
   const popupRef = useRef<HTMLDetailsElement>(null);
 
@@ -77,6 +79,18 @@ export function ColorPicker({ color, onColorChange, language, popup = false }: C
           aria-label={t.chooseCustomColor}
           onChange={(e) => handleColorSelect(e.target.value)}
           style={{ width: '56px', height: '40px', cursor: 'pointer' }}
+        />
+      </label>
+      <label className="opacity-setting">
+        <span>{t.opacity}: {Math.round((1 - opacity) * 100)}%</span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={Math.round((1 - opacity) * 100)}
+          aria-label={t.opacity}
+          onChange={(event) => onOpacityChange(1 - Number(event.target.value) / 100)}
         />
       </label>
     </div>

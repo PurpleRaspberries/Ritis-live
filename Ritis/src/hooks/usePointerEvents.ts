@@ -2,7 +2,12 @@
 // Används av App för att uppdatera former och omvandla koordinater till SVG-ytan.
 import { useState } from 'react';
 import type { Layer, ResizeHandle, Shape, Tool } from '../types';
-import { getSvgCoords } from '../utils/geometry';
+import {
+  getShapeRotationCenter,
+  getSvgCoords,
+  getSvgCoordsFromClient,
+  getUnrotatedCoords,
+} from '../utils/geometry';
 
 type BoundedShape = Extract<Shape, { x: number; y: number; width: number; height: number }>;
 
@@ -15,12 +20,27 @@ interface UsePointerProps {
   setTool: (tool: Tool) => void;
   color: string;
   penWidth: number;
+  shapeOpacity: number;
+  setEditingTextId: (id: string | null) => void;
   shapes: Shape[];
   setShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
   activeLayer: Layer;
   setActiveLayer: (layer: Layer) => void;
+  gridEnabled: boolean;
+  gridSize: number;
+}
+
+function snapValue(value: number, enabled: boolean, gridSize: number): number {
+  return enabled ? Math.round(value / gridSize) * gridSize : value;
+}
+
+function snapPoint(point: { x: number; y: number }, enabled: boolean, gridSize: number) {
+  return {
+    x: snapValue(point.x, enabled, gridSize),
+    y: snapValue(point.y, enabled, gridSize),
+  };
 }
 
 export function usePointerEvents({
@@ -28,21 +48,30 @@ export function usePointerEvents({
   setTool,
   color,
   penWidth,
+  shapeOpacity,
+  setEditingTextId,
   shapes,
   setShapes,
   selectedId,
   setSelectedId,
   activeLayer,
   setActiveLayer,
+  gridEnabled,
+  gridSize,
 }: UsePointerProps) {
   const [draftShape, setDraftShape] = useState<Shape | null>(null);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [resizeHandle, setResizeHandle] = useState<ResizeHandle | null>(null);
+  const [rotationDragStart, setRotationDragStart] = useState<{
+    pointerAngle: number;
+    rotation: number;
+    center: { x: number; y: number };
+  } | null>(null);
 
   // Startar ny text direkt eller påbörjar ett ritobjekt som färdigställs när pekaren släpps.
   const handleCanvasPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    const pos = getSvgCoords(e);
+    const pos = snapPoint(getSvgCoords(e), gridEnabled, gridSize);
     setStartPos(pos);
 
     if (tool === 'select') {
@@ -64,10 +93,12 @@ export function usePointerEvents({
           fontSize: 32,
           fontFamily: 'Arial, sans-serif',
           color,
+          opacity: shapeOpacity,
           layer: activeLayer,
         },
       ]);
       setSelectedId(id);
+      setEditingTextId(id);
       setTool('select');
       setStartPos(null);
       return;
@@ -85,6 +116,7 @@ export function usePointerEvents({
         points: [{ x: 0.5, y: 0.5 }],
         strokeWidth: penWidth,
         color,
+        opacity: shapeOpacity,
         layer: activeLayer,
       });
       setSelectedId(null);
@@ -94,9 +126,9 @@ export function usePointerEvents({
     setSelectedId(null);
 
     if (tool === 'rect') {
-      setDraftShape({ id, type: 'rect', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'rect', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'circle') {
-      setDraftShape({ id, type: 'circle', cx: pos.x, cy: pos.y, r: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'circle', cx: pos.x, cy: pos.y, r: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'line') {
       setDraftShape({
         id,
@@ -107,28 +139,29 @@ export function usePointerEvents({
         y2: pos.y,
         strokeWidth: penWidth,
         color,
+        opacity: shapeOpacity,
         layer: activeLayer,
       });
     } else if (tool === 'heart') {
-      setDraftShape({ id, type: 'heart', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'heart', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'rabbit') {
-      setDraftShape({ id, type: 'rabbit', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'rabbit', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'rainbow') {
-      setDraftShape({ id, type: 'rainbow', x: pos.x, y: pos.y, width: 0, height: 0, layer: activeLayer });
+      setDraftShape({ id, type: 'rainbow', x: pos.x, y: pos.y, width: 0, height: 0, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'cloud') {
-      setDraftShape({ id, type: 'cloud', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'cloud', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'unicorn') {
-      setDraftShape({ id, type: 'unicorn', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'unicorn', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'sun') {
-      setDraftShape({ id, type: 'sun', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'sun', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'star') {
-      setDraftShape({ id, type: 'star', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'star', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'gingerbread') {
-      setDraftShape({ id, type: 'gingerbread', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'gingerbread', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'flower') {
-      setDraftShape({ id, type: 'flower', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'flower', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'leaf') {
-      setDraftShape({ id, type: 'leaf', x: pos.x, y: pos.y, width: 0, height: 0, color, layer: activeLayer });
+      setDraftShape({ id, type: 'leaf', x: pos.x, y: pos.y, width: 0, height: 0, color, opacity: shapeOpacity, layer: activeLayer });
     } else if (tool === 'spiderweb') {
       setDraftShape({
         id,
@@ -139,6 +172,7 @@ export function usePointerEvents({
         height: 0,
         strokeWidth: penWidth,
         color,
+        opacity: shapeOpacity,
         layer: activeLayer,
       });
     }
@@ -150,13 +184,13 @@ export function usePointerEvents({
 
     const svg = e.currentTarget.ownerSVGElement;
     if (!svg) return;
-    const rect = svg.getBoundingClientRect();
+    const pointerPosition = getSvgCoordsFromClient(svg, e.clientX, e.clientY);
 
     setSelectedId(id);
     const selectedShape = shapes.find((shape) => shape.id === id);
     if (selectedShape?.layer) setActiveLayer(selectedShape.layer);
     setIsDragging(true);
-    setStartPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setStartPos(snapPoint(pointerPosition, gridEnabled, gridSize));
   };
 
   const handleResizePointerDown = (
@@ -170,17 +204,45 @@ export function usePointerEvents({
 
     const svg = e.currentTarget.ownerSVGElement;
     if (!svg) return;
-    const rect = svg.getBoundingClientRect();
+    const pointerPosition = getSvgCoordsFromClient(svg, e.clientX, e.clientY);
 
     setSelectedId(id);
     setResizeHandle(handle);
     setIsDragging(false);
-    setStartPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    const selectedShape = shapes.find((shape) => shape.id === id);
+    if (handle === 'rotate' && selectedShape) {
+      const center = getShapeRotationCenter(selectedShape);
+      setRotationDragStart({
+        pointerAngle: Math.atan2(pointerPosition.y - center.y, pointerPosition.x - center.x),
+        rotation: selectedShape.rotation ?? 0,
+        center,
+      });
+    } else {
+      setRotationDragStart(null);
+    }
+    setStartPos(snapPoint(pointerPosition, gridEnabled, gridSize));
   };
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!startPos) return;
-    const pos = getSvgCoords(e);
+    const pos = snapPoint(getSvgCoords(e), gridEnabled, gridSize);
+
+    if (tool === 'select' && resizeHandle === 'rotate' && selectedId && rotationDragStart) {
+      const pointer = getSvgCoords(e);
+      const pointerAngle = Math.atan2(
+        pointer.y - rotationDragStart.center.y,
+        pointer.x - rotationDragStart.center.x,
+      );
+      const rotation = (
+        rotationDragStart.rotation
+        + (pointerAngle - rotationDragStart.pointerAngle) * 180 / Math.PI
+        + 360
+      ) % 360;
+      setShapes((prev) => prev.map((shape) => (
+        shape.id === selectedId ? { ...shape, rotation } : shape
+      )));
+      return;
+    }
 
     if (tool === 'select' && isDragging && selectedId) {
       const dx = pos.x - startPos.x;
@@ -213,6 +275,8 @@ export function usePointerEvents({
     }
 
     if (tool === 'select' && resizeHandle && selectedId) {
+      const activeShape = shapes.find((shape) => shape.id === selectedId);
+      const resizePos = activeShape ? getUnrotatedCoords(pos, activeShape) : pos;
       // Begränsningarna hindrar att handtagen vänder formen eller gör den osynligt liten.
       setShapes((prev) =>
         prev.map((shape) => {
@@ -224,17 +288,17 @@ export function usePointerEvents({
             let right = shape.x + shape.width;
             let bottom = shape.y + shape.height;
 
-            if (resizeHandle.includes('w')) left = Math.min(pos.x, right - 20);
-            if (resizeHandle.includes('e')) right = Math.max(pos.x, left + 20);
-            if (resizeHandle.includes('n')) top = Math.min(pos.y, bottom - 20);
-            if (resizeHandle.includes('s')) bottom = Math.max(pos.y, top + 20);
+            if (resizeHandle.includes('w')) left = Math.min(resizePos.x, right - 20);
+            if (resizeHandle.includes('e')) right = Math.max(resizePos.x, left + 20);
+            if (resizeHandle.includes('n')) top = Math.min(resizePos.y, bottom - 20);
+            if (resizeHandle.includes('s')) bottom = Math.max(resizePos.y, top + 20);
 
             return { ...shape, x: left, y: top, width: right - left, height: bottom - top };
           }
 
           if (shape.type === 'line') {
-            if (resizeHandle === 'line-start') return { ...shape, x1: pos.x, y1: pos.y };
-            if (resizeHandle === 'line-end') return { ...shape, x2: pos.x, y2: pos.y };
+            if (resizeHandle === 'line-start') return { ...shape, x1: resizePos.x, y1: resizePos.y };
+            if (resizeHandle === 'line-end') return { ...shape, x2: resizePos.x, y2: resizePos.y };
             return shape;
           }
           if (shape.type === 'text') return shape;
@@ -246,15 +310,15 @@ export function usePointerEvents({
           let right = shape.cx + rx;
           let bottom = shape.cy + ry;
 
-          if (resizeHandle === 'w') left = Math.min(pos.x, right - 10);
-          if (resizeHandle === 'e') right = Math.max(pos.x, left + 10);
-          if (resizeHandle === 'n') top = Math.min(pos.y, bottom - 10);
-          if (resizeHandle === 's') bottom = Math.max(pos.y, top + 10);
+          if (resizeHandle === 'w') left = Math.min(resizePos.x, right - 10);
+          if (resizeHandle === 'e') right = Math.max(resizePos.x, left + 10);
+          if (resizeHandle === 'n') top = Math.min(resizePos.y, bottom - 10);
+          if (resizeHandle === 's') bottom = Math.max(resizePos.y, top + 10);
 
-          if (resizeHandle.includes('w')) left = Math.min(pos.x, right - 10);
-          if (resizeHandle.includes('e')) right = Math.max(pos.x, left + 10);
-          if (resizeHandle.includes('n')) top = Math.min(pos.y, bottom - 10);
-          if (resizeHandle.includes('s')) bottom = Math.max(pos.y, top + 10);
+          if (resizeHandle.includes('w')) left = Math.min(resizePos.x, right - 10);
+          if (resizeHandle.includes('e')) right = Math.max(resizePos.x, left + 10);
+          if (resizeHandle.includes('n')) top = Math.min(resizePos.y, bottom - 10);
+          if (resizeHandle.includes('s')) bottom = Math.max(resizePos.y, top + 10);
 
           const newRx = (right - left) / 2;
           const newRy = (bottom - top) / 2;
@@ -328,6 +392,7 @@ export function usePointerEvents({
     setStartPos(null);
     setIsDragging(false);
     setResizeHandle(null);
+    setRotationDragStart(null);
   };
 
   const handleCanvasPointerLeave = (e: React.PointerEvent<SVGSVGElement>) => {
